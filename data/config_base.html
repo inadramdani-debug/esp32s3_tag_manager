@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Config Base</title>
+</head>
+<body>
+
+<!-- ===================== Antenna power ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="power"></legend>
+    <div id="powerGrid" class="ant_grid"></div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetPower()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetPower()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Antenna enable ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="ant"></legend>
+    <div id="antGrid" class="ant_grid"></div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetAntState()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetAntState()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Frequency ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="frequency"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="frequency"></span>:
+        <select id="frequency" class="style_fieldset_select" style="width:260px">
+            <option value="1">China Standard (840~845MHz)</option>
+            <option value="2">China Standard2 (920~925MHz)</option>
+            <option value="4">Europe Standard (865~868MHz)</option>
+            <option value="8">USA (902-928MHz)</option>
+            <option value="22">Korea (917~923MHz)</option>
+            <option value="50">Japan (952~953MHz)</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetFrequency()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetFrequency()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Search mode ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="searchMode"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="session"></span>:
+        <select id="querySession" class="style_fieldset_select" style="width:90px">
+            <option value="S0">S0</option><option value="S1">S1</option>
+            <option value="S2">S2</option><option value="S3">S3</option>
+        </select>
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="target"></span>:
+        <select id="queryTarget" class="style_fieldset_select" style="width:90px">
+            <option value="A">A</option><option value="B">B</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetSearchMode()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetSearchMode()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Memory bank ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="memoryBank"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="memoryBank"></span>:
+        <select id="memoryBank" class="style_fieldset_select" style="width:150px">
+            <option value="epc">epc</option>
+            <option value="epc+tid">epc+tid</option>
+            <option value="epc+tid+user">epc+tid+user</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="wordUserOffset"></span>:
+        <input type="number" id="wordUserOffset" class="style_input_text" style="width:80px">
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="wordUserLength"></span>:
+        <input type="number" id="wordUserLength" class="style_input_text" style="width:80px">
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetMemoryBank()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetMemoryBank()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Tag reporting ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="tagReporting"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="dupFilter">
+        <label for="dupFilter" class="style_fieldset_span" data-i18n="dupFilter"></label>
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="filterTime"></span>:
+        <input type="number" id="filterByTime" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span" data-i18n="second"></span>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="rssiFilter">
+        <label for="rssiFilter" class="style_fieldset_span" data-i18n="rssiFilter"></label>
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="rssiGt"></span>:
+        <input type="number" id="rssiIsGreateThan" class="style_input_text" style="width:70px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="reportMode"></span>:
+        <select id="tagReportingMode" class="style_fieldset_select" style="width:180px">
+            <option value="realTime" data-i18n="realTime"></option>
+            <option value="afterStopInventory" data-i18n="afterStop"></option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetTagReporting()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetTagReporting()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Heartbeat ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="heartbeatPacket"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="intervalEnable">
+        <label for="intervalEnable" class="style_fieldset_span" data-i18n="hbEnable"></label>
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="hbInterval"></span>:
+        <input type="number" id="intervalTime" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span" data-i18n="second"></span>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetHeartbeat()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetHeartbeat()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ===================== Link frequency ===================== -->
+<fieldset class="style_fieldset">
+    <legend data-i18n="linkFrequency"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="linkFrequency"></span>:
+        <select id="linkFrequency" class="style_fieldset_select" style="width:220px">
+            <option value="DSB_ASK_FM0_40KHz">DSB_ASK_FM0_40KHz</option>
+            <option value="PR_ASK_Miller4_250KHz">PR_ASK_Miller4_250KHz</option>
+            <option value="PR_ASK_Miller4_300KHz">PR_ASK_Miller4_300KHz</option>
+            <option value="DSB_ASK_FM0_400KHz">DSB_ASK_FM0_400KHz</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="buzzerEnable"
+               onchange="baseSetToggle('buzzerForInventory', {enable: this.checked})">
+        <label for="buzzerEnable" class="style_fieldset_span" data-i18n="buzzerForInventory"></label>
+        <input type="checkbox" id="tagfocus" style="margin-left:20px"
+               onchange="baseSetToggle('tagfocus', {enable: this.checked})">
+        <label for="tagfocus" class="style_fieldset_span" data-i18n="tagfocus"></label>
+        <input type="checkbox" id="fastID" style="margin-left:20px"
+               onchange="baseSetToggle('fastID', {enable: this.checked})">
+        <label for="fastID" class="style_fieldset_span" data-i18n="fastID"></label>
+        <input type="checkbox" id="cacheTags" style="margin-left:20px"
+               onchange="baseSetToggle('afterNetworkDisconnected', {cacheTags: this.checked})">
+        <label for="cacheTags" class="style_fieldset_span" data-i18n="afterNetworkDisconnected"></label>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="baseSetLinkFrequency()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="baseGetLinkFrequency()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset board_fieldset">
+    <legend data-i18n="readerConn"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="readerIp"></span>:
+        <input type="text" id="ura4Host" class="style_input_text mono_input" style="width:150px">
+        <span class="style_fieldset_span" style="margin-left:16px" data-i18n="port"></span>:
+        <input type="number" id="ura4Port" class="style_input_text" style="width:80px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="scanHint"></span>
+    </div>
+    <div id="scanResult" class="scan_result"></div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" id="btnScan" style="width:130px"
+                onclick="readerScan()" data-i18n="scan"></button>
+        <button class="style_fieldset_div_button" onclick="setGroup('reader')" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="getGroup('reader')" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<!-- ============ The board's own settings, below the reader's ============ -->
+<fieldset class="style_fieldset board_fieldset">
+    <legend data-i18n="device"></legend>
+    <div class="style_fieldset_div">
+        <span class="style_fieldset_span" data-i18n="deviceName"></span>:
+        <input type="text" id="deviceName" class="style_input_text" style="width:180px">
+    </div>
+    <div class="style_fieldset_div">
+        <span class="style_fieldset_span" data-i18n="location"></span>:
+        <input type="text" id="location" class="style_input_text" style="width:180px">
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="setGroup('device')" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="getGroup('device')" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset board_fieldset">
+    <legend data-i18n="oled"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="oledEnable" onchange="applyOledPreview()">
+        <label for="oledEnable" class="style_fieldset_span" data-i18n="oledEnable"></label>
+        <span class="style_fieldset_span" style="margin-left:20px" data-i18n="brightness"></span>:
+        <input type="number" id="oledBrightness" value="255" min="0" max="255"
+               class="style_input_text" style="width:70px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="oledFlip">
+        <label for="oledFlip" class="style_fieldset_span" data-i18n="flip180"></label>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="setGroup('oled')" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="getGroup('oled')" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<script>
+// The antenna port count comes from the reader, not from a fixed 8: this model
+// reports 4, and rendering 8 dead selects for it would be misleading.
+// The reader takes antenna power 1-30 dBm, so a dropdown is the right control
+// here — same range and same widget as the reader's own page.
+function buildAntennaControls(count) {
+    const powers = [], ants = [];
+    let opts = '';
+    for (let p = 1; p <= 30; p++) opts += '<option value="' + p + '">' + p + '</option>';
+    for (let i = 1; i <= count; i++) {
+        powers.push('<div><span class="style_fieldset_span">' + t('antPort') + ' ' + i +
+                    '</span>: <select id="ant' + i +
+                    'Power" class="style_fieldset_select" style="width:70px">' + opts +
+                    '</select></div>');
+        ants.push('<div><input type="checkbox" id="ant' + i + 'On">' +
+                  '<label for="ant' + i + 'On" class="style_fieldset_span">' +
+                  t('antPort') + ' ' + i + '</label></div>');
+    }
+    $('powerGrid').innerHTML = powers.join('');
+    $('antGrid').innerHTML = ants.join('');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    loadBoardConfig();
+    // The antenna port count comes from the reader, not from a fixed 8: this model
+    // reports 4, and rendering 8 dead controls for it would be misleading.
+    reader('/BaseConfigurationController/queryAntennaNumberRequest', {}, 10000)
+        .then(d => {
+            buildAntennaControls(d.AntennaNumber || 4);
+            return baseGetAll();
+        })
+        .catch(() => {
+            buildAntennaControls(4);
+            toast(t('readerOffline'));
+        });
+});
+</script>
+</body>
+</html>

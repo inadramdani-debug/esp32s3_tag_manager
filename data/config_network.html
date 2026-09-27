@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Network</title>
+</head>
+<body>
+
+<!-- The reader moves when its network settings change, so say so up front. -->
+<div class="net_note" data-i18n="netMoves"></div>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="currentIP"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="ipAddress"></span>:
+        <input type="text" id="currentIp" class="style_input_text" style="width:150px" readonly>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gatewayCurrent"></span>:
+        <input type="text" id="currentGateway" class="style_input_text" style="width:150px" readonly>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="subnetCurrent"></span>:
+        <input type="text" id="currentSubnetMask" class="style_input_text" style="width:150px" readonly>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="dns1"></span>:
+        <input type="text" id="currentDns1" class="style_input_text" style="width:150px" readonly>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="dns2"></span>:
+        <input type="text" id="currentDns2" class="style_input_text" style="width:150px" readonly>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="netGetCurrent()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="ethernet"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <!-- Defaults to Static, unlike the reader's own page which defaults to
+             DHCP. The form is seeded with the reader's live IP, so leaving this
+             alone and pressing Set re-sends exactly what is already configured.
+             Defaulting to DHCP could hand the reader a different address and
+             strand whoever is talking to it. -->
+        <input type="radio" name="ethMode" id="ethStatic" value="static" checked>
+        <label for="ethStatic" class="style_fieldset_span" data-i18n="staticIp"></label>
+        <input type="radio" name="ethMode" id="ethDhcp" value="dhcp" style="margin-left:16px">
+        <label for="ethDhcp" class="style_fieldset_span" data-i18n="dhcp"></label>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="ipAddress"></span>:
+        <input type="text" id="ethernetIp" class="style_input_text mono_input" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gateway"></span>:
+        <input type="text" id="ethernetGateway" class="style_input_text mono_input" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="subnetMask"></span>:
+        <input type="text" id="ethernetSubnetMask" class="style_input_text mono_input" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="dns1"></span>:
+        <input type="text" id="ethernetDns1" class="style_input_text mono_input" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="dns2"></span>:
+        <input type="text" id="ethernetDns2" class="style_input_text mono_input" style="width:150px">
+    </div>
+    <!-- No Get here: the reader has no query for configured ethernet settings,
+         only for the live currentIP. That fieldset's Get seeds these fields. -->
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="netSetEthernet()" data-i18n="set"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="wifi"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="wifiOn" onchange="netSetWifiSwitch(this.checked)">
+        <label for="wifiOn" class="style_fieldset_span" data-i18n="wifiSwitch"></label>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="netGetWifi()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="tcpServicePort"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="rawData"></span>:
+        <input type="text" id="rawData" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="jsonData"></span>:
+        <input type="text" id="jsonData" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="netSetPort()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="netGetPort()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    // One query fills currentIP, the Ethernet form, wifi and the ports.
+    netGetCurrent();
+});
+</script>
+</body>
+</html>

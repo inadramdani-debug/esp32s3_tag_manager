@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Inventory</title>
+</head>
+<body>
+
+<!-- Filter and whitelist share one toggle. Both are set-once settings rather
+     than things touched during an inventory, and the whitelist's textarea alone
+     was 140px of the screen that the tag table needed. The whitelist's entry
+     count stays visible while collapsed, so it is still obvious when a list is
+     active and filtering the table. -->
+<div class="inv_filter_toggle">
+    <label class="toggle_head">
+        <input type="checkbox" id="cbOptions">
+        <span data-i18n="filter"></span>
+    </label>
+    <span class="hint">
+        <span data-i18n="whitelist"></span>:
+        <b id="wlCount">0</b> <span data-i18n="wlCount"></span>
+    </span>
+</div>
+
+<fieldset class="style_fieldset" id="fieldsetOptions" style="display:none">
+    <legend data-i18n="filter"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterBank"></span>:
+        <select id="select_filterBank" class="style_fieldset_select" style="width:100px">
+            <option value="epc">epc</option>
+            <option value="tid">tid</option>
+            <option value="user">user</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterOffset"></span>:
+        <input type="number" id="filterOffset" value="32" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span">bit</span>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterLength"></span>:
+        <input type="number" id="filterLength" value="96" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span">bit</span>
+        <span class="hint">(auto from Filter Data)</span>
+    </div>
+    <div class="style_fieldset_div">
+        <span class="style_fieldset_span" data-i18n="filterData"></span>:
+        <!-- 128 bit is 32 hex characters; 220px showed only about half of it.
+             Monospace at 15px needs roughly 9px per character plus padding. -->
+        <input type="text" id="filterData" class="style_input_text mono_input"
+               style="width:330px" maxlength="64">
+        <!-- Says out loud that this is optional, and that leaving it blank does
+             not disable the whitelist below — the two are unrelated. -->
+        <span class="hint" data-i18n="filterOptional"></span>
+    </div>
+</fieldset>
+
+<!-- Counters and the start/clear row.
+     One horizontal row, centred, every number the same large size. Laid out as
+     a wrapping flex row rather than a grid: the values belong side by side so
+     they can be read in one sweep, and the row stays centred as a whole. -->
+<fieldset class="style_fieldset">
+    <div class="counter_row">
+        <span class="counter_item">
+            <span class="style_fieldset_span" data-i18n="tagCount"></span>:
+            <b id="tagCount" class="big_count">0</b>
+        </span>
+        <span class="counter_item">
+            <span class="style_fieldset_span" data-i18n="inventoryCount"></span>:
+            <b id="inventoryCount" class="big_count">0</b>
+        </span>
+        <span class="counter_item">
+            <span class="style_fieldset_span" data-i18n="time"></span>:
+            <b id="time" class="big_count">0</b>
+            <span class="style_fieldset_span" data-i18n="second"></span>
+        </span>
+        <span class="counter_item">
+            <span class="style_fieldset_span" data-i18n="inventoryTime"></span>:
+            <input type="number" id="inventoryTime" class="style_input_text"
+                   style="width:90px;text-align:center">
+            <span class="style_fieldset_span" data-i18n="second"></span>
+        </span>
+        <span class="counter_item">
+            <span class="style_fieldset_span" data-i18n="backgroundInventory"></span>:
+            <input type="radio" name="bgInventory" id="bgInventoryTrue" value="true">
+            <label for="bgInventoryTrue" class="style_fieldset_span" data-i18n="yes"></label>
+            <input type="radio" name="bgInventory" id="bgInventoryFalse" value="false" checked>
+            <label for="bgInventoryFalse" class="style_fieldset_span" data-i18n="no"></label>
+        </span>
+
+        <!-- The buttons belong on the same line, as on the reader's own page.
+             They sit inside the row rather than in a div after it: the row is
+             100% wide, so anything following it starts on the next line. -->
+        <span class="counter_item">
+            <button class="style_fieldset_div_button" id="btnStart" style="width:120px"
+                    onclick="invRunning ? invStop() : invStart()" data-i18n="start"></button>
+            <button class="style_fieldset_div_button" id="btnClearData" style="width:120px"
+                    onclick="invClear()" data-i18n="clearData"></button>
+        </span>
+    </div>
+</fieldset>
+
+<!-- Whitelist: the reader's own hardware filter does not work on this unit, so
+     the list is applied in the browser instead. Lives inside the same collapsed
+     block as the filter — see the note at the top of the page. -->
+<fieldset class="style_fieldset" id="wlBox" style="display:none">
+    <legend data-i18n="whitelist"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="hint" data-i18n="wlHint"></span>
+    </div>
+    <div style="width:100%">
+        <textarea id="wlText" class="wl_textarea"
+                  data-i18n-ph="wlPlaceholder"></textarea>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="wlSave(false)" data-i18n="wlReplace"></button>
+        <button class="style_fieldset_div_button" onclick="wlSave(true)" data-i18n="wlAppend"></button>
+        <button class="style_fieldset_div_button" onclick="wlClear()" data-i18n="wlClear"></button>
+    </div>
+</fieldset>
+
+<!-- Plain container, not a fieldset: the table carries its own border, and
+     wrapping it added a redundant second frame. -->
+<div class="tag_table_wrap">
+    <table class="tag_table">
+        <thead>
+            <tr>
+                <th data-i18n="index"></th>
+                <th data-i18n="epc"></th>
+                <th data-i18n="tid"></th>
+                <th data-i18n="user"></th>
+                <th data-i18n="rssi"></th>
+                <th data-i18n="pc"></th>
+                <th data-i18n="antenna"></th>
+                <th data-i18n="count"></th>
+            </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
+
+<!-- Unlisted tags, at the bottom so they never push the main table out of
+     view. Shown rather than hidden, because an unexpected EPC is exactly what
+     you want to notice. -->
+<fieldset class="style_fieldset" id="unknownBox" style="display:none">
+    <legend>
+        <span data-i18n="wlUnknown"></span> (<b id="unknownCount">0</b>)
+    </legend>
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th data-i18n="epc"></th>
+                    <th data-i18n="rssi"></th>
+                    <th data-i18n="antenna"></th>
+                    <th data-i18n="count"></th>
+                </tr>
+            </thead>
+            <tbody id="unknownBody"></tbody>
+        </table>
+    </div>
+</fieldset>
+
+<script>window.addEventListener('DOMContentLoaded', () => { i18n(); invInit(); });</script>
+</body>
+</html>

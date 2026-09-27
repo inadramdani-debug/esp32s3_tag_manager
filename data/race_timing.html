@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<script src="js/racetiming.js"></script>
+<title>Race Timing</title>
+</head>
+<body>
+
+<!-- ── Panel 0: Race Control (Hari H - Operasional Lapangan) ──────────── -->
+<div id="tabPanel_control" class="race_panel">
+    <div class="race_card" style="border:none;box-shadow:none;padding:0">
+        <div class="race_header_row">
+            <div style="display:flex;align-items:center;gap:6px;flex:1">
+                <span style="font-size:18px">⚡</span>
+                <b style="font-size:14px;color:#0f172a">Race Control (Operasional Hari H)</b>
+                <span style="color:#cbd5e1">|</span>
+                <input type="text" id="raceTitleInput" class="style_input_text font_bold"
+                       style="height:28px;font-size:13px;max-width:260px;border-color:#b0bec5"
+                       value="Event Lomba Lari 5K / 10K" placeholder="Nama Event Lomba..."
+                       onchange="raceTitle=this.value;raceSaveState();raceSyncEventTitle()">
+            </div>
+            <span id="raceStateBadge" class="race_badge ready">SIAP</span>
+        </div>
+
+        <!-- Digital Stopwatch Display -->
+        <div class="clock_container">
+            <div class="digital_clock" id="raceClock">00:00:00.00</div>
+        </div>
+
+        <!-- Gun Start & Main Controls -->
+        <div class="race_controls_row">
+            <button type="button" class="style_fieldset_div_button font_bold" id="btnRaceScan"
+                    style="height:34px;font-size:12.5px;background:#94a3b8;color:#ffffff;border:1px solid #64748b;padding:0 14px"
+                    onclick="raceToggleScan()" title="Aktifkan Antena RFID Reader (Hanya aktif jika Gun Time sudah berjalan)">
+                📡 SCAN (Aktifkan Antena)
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_gun_start" id="btnGunStart"
+                    style="height:34px;font-size:12px;padding:0 12px"
+                    onclick="raceStartGun(true)" title="Mulai Gun Time untuk seluruh kategori (Manual Operator)">
+                ▶ START GUN TIME
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_race_stop" id="btnStopRace"
+                    onclick="raceStop()" disabled>⏹ STOP LOMBA</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" id="btnResetRace"
+                    onclick="raceReset()">🔄 RESET</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" onclick="raceExportResultsCsv()">📊 Ekspor Hasil CSV</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:32px;font-size:11.5px;background:#e0f2fe;color:#0369a1;border-color:#7dd3fc"
+                    onclick="raceSimulateSingleStart()" title="Simulasikan 1 tag melintas di garis start">
+                👟 Tes Chip Start
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:32px;font-size:11.5px;background:#ecfdf5;color:#15803d;border-color:#86efac"
+                    onclick="raceSimulateSingleFinisher()" title="Simulasikan 1 tag melintas di garis finish">
+                🏁 Tes Chip Finish
+            </button>
+            <button type="button" class="style_fieldset_div_button font_bold" style="height:32px;font-size:11.5px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d"
+                    onclick="raceFocusManualIngest()" title="Buka form input tembak BIB manual (Backup saat tag RFID tidak terbaca)">
+                🎯 Tembak Manual BIB
+            </button>
+            <button type="button" class="style_fieldset_div_button font_bold" style="height:32px;font-size:12px;background:#7c3aed;color:#ffffff;border:1px solid #6d28d9;padding:0 12px"
+                    onclick="raceRunFullSimulationScenario95()" title="Jalankan simulasi 95 tag di Antena 1 (30 dBm, auto gate, deadzone)">
+                🚀 Jalankan Simulasi 95 Tag
+            </button>
+
+            <!-- Stats on Right -->
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <div class="stat_badge">
+                    <span>Peserta:</span>
+                    <b id="statTotalRunners">0</b>
+                </div>
+                <div class="stat_badge">
+                    <span>Started:</span>
+                    <b id="statStartedRunners" style="color:#0284c7">0</b>
+                </div>
+                <div class="stat_badge">
+                    <span>Finish:</span>
+                    <b id="statFinished" style="color:#2b7d2b">0</b>
+                </div>
+                <div class="stat_badge">
+                    <span>Di Jalur:</span>
+                    <b id="statOnTrack" style="color:#1a6fb5">0</b>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wave Launchpad per Kategori & Status Bar -->
+        <div class="wave_bar" style="margin-top:8px;background:#f8fafc;border:1px solid #e2e8f0;padding:6px 10px;border-radius:4px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="font-weight:bold;color:#1e293b;font-size:12px">⚡ Wave Launchpad:</span>
+                <div id="wavePillContainer" style="display:inline-flex;gap:4px;flex-wrap:wrap"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap">
+                <span style="font-weight:bold;color:#475569;font-size:11.5px">⏱️ COT:</span>
+                <span id="cotActiveLabel" class="cot_badge_pill ok" style="cursor:pointer" onclick="raceSetTab('cot')" title="Klik untuk atur COT">5K: 01:00:00</span>
+                <span id="cotCountdownBadge" style="font-family:Consolas,monospace;font-weight:bold;font-size:11.5px;color:#1e293b"></span>
+                <span style="color:#cbd5e1">|</span>
+                <span id="gateModeBadge" class="reader_badge online" style="cursor:pointer" onclick="raceSetTab('gate')" title="Klik untuk atur Gerbang">🔄 Gerbang: Auto</span>
+                <span id="deadZoneSummaryBadge" class="deadzone_badge" style="cursor:pointer" onclick="raceSetTab('deadzone')" title="Klik untuk atur Dead Zone">5K: 12m | Anti-Lalu: Aktif</span>
+            </div>
+        </div>
+
+        <!-- 🚪 Kontrol Fase Gerbang Satu Lokasi (Start ➔ Finish Transition Controller) -->
+        <div class="gate_phase_bar" style="margin-top:8px;background:#ffffff;border:1px solid #cbd5e1;padding:8px 12px;border-radius:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-size:16px">🚪</span>
+                <b style="color:#0f172a;font-size:12.5px">Kontrol Fase Gerbang (Start/Finish Sama):</b>
+                <span id="gatePhaseStatusBadge" class="reader_badge online" style="font-size:11px;padding:3px 10px;font-weight:bold">🟢 FASE START AKTIF</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <button type="button" id="btnToggleGatePhase" class="style_fieldset_div_button font_bold" style="height:30px;font-size:12px;padding:0 14px;background:#2563eb;color:#ffffff;border:1px solid #1d4ed8"
+                        onclick="raceToggleGatePhase()" title="Klik saat semua peserta sudah berangkat untuk menutup start gate dan mengaktifkan pencatatan finish">
+                    🏁 TUTUP START & BUKA FINISH
+                </button>
+                <div style="display:inline-flex;gap:2px;background:#f1f5f9;padding:2px;border-radius:4px;border:1px solid #cbd5e1">
+                    <button type="button" id="btnGateSelect_start" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:10.5px;padding:0 8px;margin:0" onclick="raceSetGateMode('start')">🟢 Start Saja</button>
+                    <button type="button" id="btnGateSelect_auto" class="style_fieldset_div_button btn_tool active" style="height:24px;font-size:10.5px;padding:0 8px;margin:0" onclick="raceSetGateMode('auto')">🔄 Auto (Start & Finish)</button>
+                    <button type="button" id="btnGateSelect_finish" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:10.5px;padding:0 8px;margin:0" onclick="raceSetGateMode('finish')">🏁 Finish Saja</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🎯 Form Tembak Manual BIB (Start & Finish Backup) -->
+        <div id="manualIngestPanel" style="margin-top:8px;background:#f0fdf4;border:1.5px solid #22c55e;border-radius:6px;padding:8px 12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+                <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-size:15px">🎯</span>
+                    <b style="color:#15803d;font-size:12px">TEMBAK MANUAL TIMING (Backup BIB / Tag Tidak Terbaca):</b>
+                    <span style="font-size:11px;color:#166534;background:#dcfce7;padding:1px 6px;border-radius:4px;border:1px solid #bbf7d0">
+                        Otomatis Cari Data Peserta dari Database
+                    </span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:11.5px">
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#0f172a;font-weight:600">
+                        <input type="radio" name="manualTimeMode" value="auto" checked onchange="raceToggleManualTimeInput(this.value)">
+                        ⏱️ Jam Sekarang (Real-Time)
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;color:#0f172a;font-weight:600">
+                        <input type="radio" name="manualTimeMode" value="manual" onchange="raceToggleManualTimeInput(this.value)">
+                        🕒 Jam Manual
+                    </label>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:4px">
+                    <label for="manualBibInput" style="font-weight:bold;font-size:12px;color:#0f172a">No BIB:</label>
+                    <input type="text" id="manualBibInput" class="style_input_text font_bold mono"
+                           placeholder="Ketik No BIB..."
+                           style="width:115px;height:30px;font-size:14px;text-align:center;border:1.5px solid #16a34a;border-radius:4px"
+                           oninput="raceLookupManualBib(this.value)"
+                           onkeydown="raceHandleManualBibKey(event)"
+                           autocomplete="off">
+                </div>
+
+                <!-- Preview Data Peserta dari Database -->
+                <div id="manualBibPreviewBox" style="flex:1;min-width:240px;background:#ffffff;border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;display:flex;align-items:center;justify-content:space-between;min-height:30px">
+                    <span id="manualBibPreviewText" style="font-size:11.5px;color:#64748b">
+                        Ketik nomor BIB untuk melihat nama & data peserta dari database...
+                    </span>
+                    <span id="manualBibStatusBadge" style="display:none"></span>
+                </div>
+
+                <!-- Custom Time Input (HH:MM:SS) -->
+                <div id="manualCustomTimeWrap" style="display:none;align-items:center;gap:4px">
+                    <label for="manualCustomTimeInput" style="font-weight:bold;font-size:11.5px;color:#0f172a">Jam:</label>
+                    <input type="time" step="1" id="manualCustomTimeInput" class="style_input_text mono font_bold"
+                           style="width:115px;height:30px;font-size:12px;border-radius:4px">
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex;align-items:center;gap:5px">
+                    <button type="button" id="btnManualStart" class="style_fieldset_div_button font_bold"
+                            style="height:30px;font-size:11.5px;padding:0 12px;background:#0284c7;color:#ffffff;border:1px solid #0369a1"
+                            onclick="raceExecuteManualIngest('START')" title="Catat waktu Start untuk BIB ini">
+                        🟢 Tembak START
+                    </button>
+                    <button type="button" id="btnManualFinish" class="style_fieldset_div_button font_bold"
+                            style="height:30px;font-size:11.5px;padding:0 12px;background:#16a34a;color:#ffffff;border:1px solid #15803d"
+                            onclick="raceExecuteManualIngest('FINISH')" title="Catat waktu Finish untuk BIB ini">
+                        🏆 Tembak FINISH
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Finisher / Ingest Alert Banner -->
+    <div id="finisherBanner" class="scan_banner ok" style="display:none;margin-top:8px"></div>
+
+    <!-- Live Real-Time Feed (Aktivitas Pembacaan Matras / Antena Real-Time) -->
+    <div style="margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+                <b style="font-size:13px;color:#0f172a">📡 Live Feed Aktivitas Matras & Finish Line</b>
+                <span id="controlRecentSummary" style="font-size:11.5px;color:#64748b"></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <div style="display:inline-flex;gap:3px;background:#f1f5f9;padding:2px;border-radius:4px;border:1px solid #e2e8f0">
+                    <button type="button" id="feedFilter_ALL" class="style_fieldset_div_button btn_tool active" style="height:24px;font-size:11px;padding:0 8px;margin:0" onclick="raceSetControlFeedFilter('ALL')">⚡ Semua Aktivitas</button>
+                    <button type="button" id="feedFilter_START" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:11px;padding:0 8px;margin:0" onclick="raceSetControlFeedFilter('START')">🟢 Data Start</button>
+                    <button type="button" id="feedFilter_FINISH" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:11px;padding:0 8px;margin:0" onclick="raceSetControlFeedFilter('FINISH')">🏆 Data Finish</button>
+                    <button type="button" id="feedFilter_UNREG" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:11px;padding:0 8px;margin:0" onclick="raceSetControlFeedFilter('UNREG')">📡 Tag Asing</button>
+                </div>
+                <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:24px;font-size:11px;padding:0 8px"
+                        onclick="raceResetLiveFeedWithPin()" title="Bersihkan riwayat Live Feed (Memerlukan PIN 1234)">
+                    🗑️ Reset Live Feed
+                </button>
+                <label style="display:flex;align-items:center;gap:4px;font-size:11.5px;color:#0f172a;cursor:pointer;background:#f8fafc;padding:3px 8px;border-radius:4px;border:1px solid #cbd5e1" title="Jika aktif, tag RFID yang belum ada di database akan otomatis didaftarkan sebagai nomor BIB baru saat melewati start gate">
+                    <input type="checkbox" id="chkAutoRegisterUnregistered" checked onchange="raceToggleAutoRegister(this.checked)">
+                    <span style="font-weight:600">Auto-Daftarkan Tag Asing saat Start</span>
+                </label>
+            </div>
+        </div>
+        <div class="tag_table_wrap">
+            <table class="tag_table">
+                <thead id="controlRecentTableHead">
+                    <tr>
+                        <th style="width:115px">Tipe / Mat Event</th>
+                        <th style="width:60px">Posisi</th>
+                        <th style="width:80px">BIB Number</th>
+                        <th>Nama Peserta / Tag Info</th>
+                        <th style="width:55px">Gender</th>
+                        <th style="width:80px">Kategori</th>
+                        <th style="width:110px">Gun Time</th>
+                        <th style="width:110px">Chip Time</th>
+                        <th style="width:115px">Status / Catatan</th>
+                        <th style="width:105px">Waktu Jam</th>
+                    </tr>
+                </thead>
+                <tbody id="controlRecentBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── Panel 1: Live Leaderboard (Rank, BIB Number, Participant, Category, Gun Time, Chip Time) ── -->
+<div id="tabPanel_leaderboard" class="race_panel" style="display:none">
+    <!-- Clean Minimal Header for Display / TV Screen -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:20px">🏆</span>
+            <b style="font-size:15px;color:#0f172a" id="leaderboardEventTitleDisplay">Event Lomba Lari 5K / 10K</b>
+            <span class="race_badge ready" id="leaderboardLiveStateBadge" style="font-size:10px">SIAP</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:#475569">Timer Lomba:</span>
+            <span id="leaderboardMiniClock" style="font-family:Consolas,monospace;font-weight:bold;font-size:14px;color:#0284c7;background:#f0f9ff;border:1px solid #bae6fd;padding:2px 8px;border-radius:4px">00:00:00.00</span>
+            <span style="color:#cbd5e1">|</span>
+            <div class="stat_badge" style="background:#ecfdf5;border-color:#a7f3d0">
+                <span>Finisher:</span>
+                <b id="leaderboardFinisherCount" style="color:#15803d">0</b>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category & Search Filter Bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="text" id="leaderboardSearchInput" class="style_input_text" style="width:210px;height:28px"
+                   placeholder="🔍 Cari Nama / BIB..." oninput="raceRenderLeaderboard()">
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap" id="leaderboardCatFilterWrap"></div>
+        </div>
+        <div style="font-size:11.5px;color:#64748b" id="leaderboardFilterSummary"></div>
+    </div>
+
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:70px">Rank</th>
+                    <th style="width:80px">BIB Number</th>
+                    <th>Participant</th>
+                    <th style="width:90px">Category</th>
+                    <th style="width:130px">Gun Time</th>
+                    <th style="width:130px">Chip Time</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 2: Race Result (Position, BIB Number, Name, Gender, Category, Gun Time Start, Gun Finish Time, Chip Time Start, Chip Finish Time, Gun Time, Chip Time, Status, Notes, Action) ── -->
+<div id="tabPanel_results" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">📋</span>
+            <b style="font-size:14px;color:#0f172a">Hasil Perlombaan (Race Results)</b>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;color:#64748b" id="resultsFilterSummary"></span>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:26px;font-size:11.5px"
+                    onclick="raceExportResultsCsv()">📊 Ekspor Hasil CSV</button>
+        </div>
+    </div>
+
+    <!-- Filters & Search Toolbar -->
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <input type="text" id="resultSearchInput" class="style_input_text" style="width:180px;height:28px"
+               placeholder="🔍 Cari BIB / Nama..." oninput="raceRenderRaceResults()">
+        <select id="resultGenderFilter" class="style_fieldset_select" style="height:28px" onchange="raceRenderRaceResults()">
+            <option value="ALL">Semua Gender</option>
+            <option value="L">L (Pria)</option>
+            <option value="P">P (Wanita)</option>
+        </select>
+        <select id="resultCategoryFilter" class="style_fieldset_select" style="height:28px" onchange="raceRenderRaceResults()">
+            <option value="ALL">Semua Kategori</option>
+        </select>
+        <select id="resultStatusFilter" class="style_fieldset_select" style="height:28px" onchange="raceRenderRaceResults()">
+            <option value="ALL">Semua Status</option>
+            <option value="FINISHED">FINISHED</option>
+            <option value="STARTED">STARTED (Di Jalur)</option>
+            <option value="REGISTERED">REGISTERED (Siap)</option>
+            <option value="OVER_COT">OVER COT</option>
+            <option value="DNF">DNF</option>
+            <option value="DSQ">DSQ</option>
+        </select>
+    </div>
+
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:65px">Position</th>
+                    <th style="width:70px">BIB Number</th>
+                    <th>Name</th>
+                    <th style="width:55px">Gender</th>
+                    <th style="width:75px">Category</th>
+                    <th style="width:95px">Gun Time Start</th>
+                    <th style="width:95px">Gun Finish Time</th>
+                    <th style="width:95px">Chip Time Start</th>
+                    <th style="width:95px">Chip Finish Time</th>
+                    <th style="width:105px">Gun Time</th>
+                    <th style="width:105px">Chip Time</th>
+                    <th style="width:85px">Status</th>
+                    <th style="width:120px">Notes</th>
+                    <th style="width:85px">Action</th>
+                </tr>
+            </thead>
+            <tbody id="raceResultsBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 3: Runner Registration & Database ────────────────────────── -->
+<div id="tabPanel_runners" class="race_panel" style="display:none">
+    <!-- Toolbar Aksi Cepat / Massal -->
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 12px;background:#2e7d32;color:#fff"
+                onclick="raceImportFromRawReads()" title="Daftarkan semua tag yang ada di tabel Log Tag Mentah menjadi peserta lomba">
+            📥 Ambil dari Race Data
+        </button>
+        <button type="button" class="style_fieldset_div_button btn_gun_start" style="height:30px;font-size:12px;padding:0 12px"
+                onclick="raceBulkScanAndGenerate()" title="Pindai semua tag dekat antena (misal 95 tag) dan buat peserta otomatis dengan nama Indonesia & no BIB">
+            📡 Scan Massal Langsung
+        </button>
+        <button type="button" class="style_fieldset_div_button btn_tool font_bold" style="height:30px;font-size:12px;color:#0284c7"
+                onclick="raceOpenCategoryModal()" title="Tambah, ubah, atau hapus kategori lomba serta batas COT & Dead Zone">
+            🏷️ Kelola Kategori
+        </button>
+        <button type="button" class="style_fieldset_div_button font_bold" style="height:30px;font-size:12px;background:#7c3aed;color:#ffffff;border:1px solid #6d28d9;padding:0 10px"
+                onclick="raceRunFullSimulationScenario95()" title="Simulasikan 95 tag depan antena 1 dengan daya 30 dBm dan proteksi Deadzone">
+            ⚡ Simulasi 95 Tag
+        </button>
+        <input type="file" id="csvFileInput" accept=".csv,.txt" style="display:none" onchange="raceHandleCsvImport(this)">
+        <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px"
+                onclick="$('csvFileInput').click()" title="Impor data peserta dari file CSV (format 13 kolom)">
+            📥 Impor CSV Peserta
+        </button>
+        <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px"
+                onclick="raceExportCsv()" title="Ekspor seluruh data peserta ke file CSV">
+            📤 Ekspor CSV Peserta
+        </button>
+        <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:30px;font-size:12px;margin-left:auto"
+                onclick="raceClearAllRunners()">
+            🗑️ Kosongkan Peserta
+        </button>
+    </div>
+
+    <!-- Category Filter Bar for Runners -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eef2f6">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap" id="runnersCatFilterWrap"></div>
+        <div style="font-size:11.5px;color:#64748b" id="runnersFilterSummary"></div>
+    </div>
+
+    <!-- Form Tambah Peserta (13 Kolom Schema) -->
+    <fieldset class="style_fieldset" style="margin-bottom:8px">
+        <legend><b>Tambah Peserta Manual</b></legend>
+        <!-- Baris Utama (Ditampilkan di Layar) -->
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+            <input type="text" id="newBib" class="style_input_text mono_input font_bold" style="width:70px;height:28px"
+                   placeholder="BIB #" title="BIB Number">
+            <input type="text" id="newBibName" class="style_input_text font_bold" style="width:110px;height:28px"
+                   placeholder="BIB Name" title="Nama yang tercetak di BIB (misal BUDI S.)">
+            <input type="text" id="newName" class="style_input_text" style="flex:1 1 140px;height:28px"
+                   placeholder="Participant (Nama Lengkap)..." title="Nama Lengkap Peserta">
+            <select id="newGender" class="style_fieldset_select" style="width:70px;height:28px" title="Gender">
+                <option value="L">L (Pria)</option>
+                <option value="P">P (Wanita)</option>
+            </select>
+            <input type="text" id="newEvent" class="style_input_text" style="width:120px;height:28px"
+                   value="Event Lomba Lari" placeholder="Event..." title="Nama Event">
+            <select id="newCategory" class="style_fieldset_select" style="width:85px;height:28px" title="Category">
+                <option value="5K">5K</option>
+                <option value="10K">10K</option>
+                <option value="21K">21K</option>
+                <option value="42K">Marathon</option>
+                <option value="Master">Master</option>
+            </select>
+            <input type="text" id="newEpc" class="style_input_text mono_input" style="flex:1 1 160px;height:28px"
+                   placeholder="ID / Tag EPC (Scan)..." title="ID Peserta / EPC RFID Tag">
+            <button type="button" class="style_fieldset_div_button btn_tool" onclick="raceScanTagToForm()"
+                    title="Baca tag RFID terdekat untuk dipasangkan ke peserta ini">📡 Scan Tag</button>
+            <button type="button" class="style_fieldset_div_button btn_assign" onclick="raceAddRunnerFromForm()">
+                + Tambah Peserta
+            </button>
+        </div>
+
+        <!-- Tombol Toggle Field Tambahan (Database Fields) -->
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <a href="javascript:void(0)" style="font-size:11.5px;color:#0284c7;text-decoration:none;font-weight:600"
+               onclick="raceToggleExtraRunnerInputs()">
+                ⚙️ <span id="toggleExtraInputsLabel">Tampilkan Kolom Database (Blood Type, No. HP, Kontak Darurat, Email)</span>
+            </a>
+        </div>
+
+        <!-- Baris Tambahan (Hanya Tersimpan di Database) -->
+        <div id="extraRunnerInputs" style="display:none;margin-top:6px;padding:6px 8px;background:#f8fafc;border-radius:4px;border:1px solid #e2e8f0">
+            <div style="font-size:11px;color:#64748b;margin-bottom:4px">
+                ℹ️ <b>Kolom Database (Tidak Ditampilkan di Tabel Layar):</b>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:4px">
+                    <span style="font-size:11px;color:#475569">Blood Type:</span>
+                    <select id="newBloodType" class="style_fieldset_select" style="width:65px;height:26px">
+                        <option value="—">—</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="AB">AB</option>
+                        <option value="O">O</option>
+                    </select>
+                </div>
+                <input type="text" id="newPhone" class="style_input_text" style="flex:1 1 120px;height:26px"
+                       placeholder="No. Hp Peserta (08...)" title="Nomor HP Peserta">
+                <input type="text" id="newEmergency" class="style_input_text" style="flex:1 1 120px;height:26px"
+                       placeholder="No.Hp Darurat (08...)" title="Nomor HP Kontak Darurat">
+                <input type="email" id="newEmail" class="style_input_text" style="flex:1 1 150px;height:26px"
+                       placeholder="email (peserta@gmail.com)" title="Alamat Email Peserta">
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Tabel Daftar Peserta (Urutan Kolom Layar: No., ID, BIB Number, BIB Name, Participant, Gender, Event, Category, Registered, Aksi) -->
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:40px">No.</th>
+                    <th style="width:160px">ID (Tag EPC)</th>
+                    <th style="width:75px">BIB Number</th>
+                    <th style="width:110px">BIB Name</th>
+                    <th>Participant</th>
+                    <th style="width:55px">Gender</th>
+                    <th style="width:120px">Event</th>
+                    <th style="width:75px">Category</th>
+                    <th style="width:95px">Registered</th>
+                    <th style="width:85px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="runnersBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 4: Race Data (No, BIB, Event Name, Name, Gender, Category, EPC, Station, Hub ID, Antenna, Time, Action) ── -->
+<div id="tabPanel_racedata" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #eef2f6">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="text" id="raceDataSearchInput" class="style_input_text" style="width:230px;height:28px"
+                   placeholder="🔍 Cari Nama, Event, EPC, TID, Station, Hub ID..." oninput="raceRenderRaceData()">
+            <select id="raceDataStationFilter" class="style_fieldset_select" style="height:28px" onchange="raceRenderRaceData()">
+                <option value="ALL">Semua Station</option>
+                <option value="Start Gate">Start Gate</option>
+                <option value="Finish Gate">Finish Gate</option>
+                <option value="Split Point">Split Point</option>
+                <option value="Checkpoint">Checkpoint</option>
+            </select>
+            <select id="raceDataHubFilter" class="style_fieldset_select" style="height:28px" onchange="raceRenderRaceData()">
+                <option value="ALL">Semua Hub ID</option>
+                <option value="Hub-1">Hub-1 (Host ESP32)</option>
+                <option value="Hub-2">Hub-2 (Secondary Reader)</option>
+            </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:28px;font-size:11.5px;padding:0 10px;background:#2e7d32;color:#fff"
+                    onclick="raceImportFromRawReads()" title="Daftarkan semua tag yang ada di tabel ini menjadi peserta lomba">
+                👥 Daftarkan Tag Jadi Peserta
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:28px;font-size:11.5px"
+                    onclick="raceExportRaceDataCsv()">📤 Ekspor Race Data CSV</button>
+            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:28px;font-size:11.5px"
+                    onclick="raceClearRawReads()">🗑️ Bersihkan Data</button>
+        </div>
+    </div>
+    <div style="font-size:11.5px;color:#64748b;margin-bottom:6px" id="raceDataFilterSummary"></div>
+
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:40px">No</th>
+                    <th style="width:65px">BIB</th>
+                    <th style="width:120px">Event Name</th>
+                    <th>Name</th>
+                    <th style="width:55px">Gender</th>
+                    <th style="width:75px">Category</th>
+                    <th style="width:140px">EPC</th>
+                    <th style="width:110px">Station</th>
+                    <th style="width:120px">Hub ID</th>
+                    <th style="width:90px">Antenna</th>
+                    <th style="width:105px">Time</th>
+                    <th style="width:65px">Action</th>
+                </tr>
+            </thead>
+            <tbody id="raceDataBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 5: Setting Gun Time & Wave Start ────────────────────────── -->
+<div id="tabPanel_guntime" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">⚡</span>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Gun Time & Wave Start per Kategori</b>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:#475569">Jam Browser (Live):</span>
+            <span id="browserLiveClock" style="font-family:Consolas,monospace;font-weight:bold;font-size:14px;color:#0369a1;background:#e0f2fe;padding:2px 8px;border-radius:4px">00:00:00</span>
+        </div>
+    </div>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;color:#334155;line-height:1.5">
+        ℹ️ <b>Petunjuk Otoritas Gun Start:</b><br>
+        • <b>Jadwal Otomatis:</b> Jika jam jadwal diisi (format <code>JJ:MM:DD</code>), sistem akan <b>otomatis memulai Gun Start</b> saat waktu browser menyentuh jam tersebut.<br>
+        • <b>Manual Operator:</b> Jika tombol <b>▶ Start Wave</b> ditekan langsung oleh Operator, sistem langsung berjalan seketika dan otoritas penuh dipegang Operator.<br>
+        • Setiap kategori dapat memiliki jam start yang berbeda (Wave Start bertahap).
+    </div>
+
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">⏰ Jadwal Jam Start per Kategori (Format: JJ:MM:DD)</b></legend>
+        <div class="cot_grid" id="waveGridInputs"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveWaveFromDrawer()">💾 Simpan Jadwal Wave</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyWaveOffsetSeconds(10)" title="Set jadwal start wave mulai 10 detik dari jam browser saat ini">
+                ⚡ Mulai +10 Detik dari Sekarang (Tes Cepat)
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyWavePreset('15min')" title="Set jadwal wave bertahap dengan selisih 15 menit antar kategori">
+                🕒 Selisih 15 Menit Tiap Kategori
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:30px;font-size:11.5px;margin-left:auto"
+                    onclick="raceClearAllWaveSchedules()">
+                ❌ Hapus Jadwal (Manual Mode)
+            </button>
+        </div>
+    </fieldset>
+
+    <!-- Tabel Status Wave Kategori Saat Ini -->
+    <div style="font-size:12px;font-weight:bold;color:#334155;margin-bottom:6px">
+        📊 Status & Kontrol Live Wave Start:
+    </div>
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:40px">No</th>
+                    <th style="width:110px">Kategori</th>
+                    <th style="width:110px">Jadwal Start</th>
+                    <th style="width:110px">Status Wave</th>
+                    <th style="width:130px">Jam Start Aktual</th>
+                    <th style="width:130px">Elapsed Time</th>
+                    <th style="width:130px">Aksi Operator</th>
+                </tr>
+            </thead>
+            <tbody id="gunTimeStatusBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 6: Setting Cut Off Time (COT) ───────────────────────────── -->
+<div id="tabPanel_cot" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">⏱️</span>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Batas Waktu Lomba (Cut Off Time / COT) per Kategori</b>
+        </div>
+        <div id="cotPanelSummaryBadge" class="cot_badge_pill ok">COT Aktif</div>
+    </div>
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;color:#334155;line-height:1.5">
+        ℹ️ <b>Ketentuan Cut Off Time (COT):</b><br>
+        • Masukkan durasi maksimal perlombaan untuk masing-masing kategori dengan format <code>JJ:MM:DD</code> (contoh: <code>01:00:00</code> = 1 Jam).<br>
+        • Peserta yang menyentuh garis finish setelah batas COT berakhir akan otomatis mendapatkan status <b>OVER COT</b>.<br>
+        • Gunakan tombol <b>🛑 Tutup Finish / Tandai DNF</b> jika lomba telah ditutup untuk menandai seluruh pelari yang belum finish sebagai <b>DNF</b>.
+    </div>
+
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">⏱️ Durasi Batas Waktu COT (Format: JJ:MM:DD)</b></legend>
+        <div class="cot_grid" id="cotGridInputs"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveCotFromDrawer()">💾 Simpan Batas COT</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyCotPreset('funrun')">🏃 Preset Fun Run</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyCotPreset('athletic')">⚡ Preset Atletik / Kompetisi</button>
+            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:30px;font-size:11.5px;margin-left:auto"
+                    onclick="raceMarkDnfForUnfinished()" title="Ubah status seluruh peserta yang masih berada di jalur menjadi DNF">
+                🛑 Tutup Finish (Tandai Sisa DNF)
+            </button>
+        </div>
+    </fieldset>
+
+    <!-- Tabel Rincian COT per Kategori -->
+    <div style="font-size:12px;font-weight:bold;color:#334155;margin-bottom:6px">
+        📋 Rincian & Status Hitung Mundur COT:
+    </div>
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:40px">No</th>
+                    <th style="width:110px">Kategori</th>
+                    <th style="width:120px">Batas Durasi COT</th>
+                    <th style="width:140px">Status / Sisa Waktu</th>
+                    <th style="width:110px">Peserta Finish Sah</th>
+                    <th style="width:110px">Peserta Over COT</th>
+                    <th style="width:110px">Masih di Jalur</th>
+                </tr>
+            </thead>
+            <tbody id="cotStatusTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Panel 7: Setting Gerbang & Dual Reader ────────────────────────── -->
+<div id="tabPanel_gate" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">📡</span>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Mode Gerbang (Station) & Integrasi Dual Reader RFID</b>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+            <span id="r1StatusBadge" class="reader_badge online">R1 (8P): 🟢 Host ESP32</span>
+            <span id="r2StatusBadge" class="reader_badge disabled">R2 (4P): ⚪ Nonaktif</span>
+        </div>
+    </div>
+
+    <!-- Mode Gerbang Pilihan -->
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">🚪 Mode Operasi Gerbang (Gate Mode)</b></legend>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:8px;margin-bottom:6px">
+            <div class="gate_mode_card" id="gateCard_auto" onclick="raceSetGateMode('auto')" style="border:1px solid #cbd5e1;padding:10px;border-radius:6px;cursor:pointer;background:#ffffff">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <b style="font-size:13px;color:#0f172a">🔄 Auto (Start & Finish Gabung)</b>
+                    <input type="radio" name="gateModeRadio" id="radioGate_auto" checked>
+                </div>
+                <div style="font-size:11.5px;color:#64748b;line-height:1.4">
+                    Lokasi Start dan Finish berada di tempat yang sama. Tag pertama mencatat <b>Chip Start</b>, tag kedua setelah batas <i>Dead Zone</i> mencatat <b>Finish</b>.
+                </div>
+            </div>
+
+            <div class="gate_mode_card" id="gateCard_start" onclick="raceSetGateMode('start')" style="border:1px solid #cbd5e1;padding:10px;border-radius:6px;cursor:pointer;background:#ffffff">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <b style="font-size:13px;color:#15803d">🟢 Gerbang START Saja</b>
+                    <input type="radio" name="gateModeRadio" id="radioGate_start">
+                </div>
+                <div style="font-size:11.5px;color:#64748b;line-height:1.4">
+                    Reader ini diletakkan khusus di garis Start. Semua tag yang terbaca hanya akan mencatat waktu mulai (<b>Chip Time Start</b>).
+                </div>
+            </div>
+
+            <div class="gate_mode_card" id="gateCard_finish" onclick="raceSetGateMode('finish')" style="border:1px solid #cbd5e1;padding:10px;border-radius:6px;cursor:pointer;background:#ffffff">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <b style="font-size:13px;color:#2563eb">🏁 Gerbang FINISH Saja</b>
+                    <input type="radio" name="gateModeRadio" id="radioGate_finish">
+                </div>
+                <div style="font-size:11.5px;color:#64748b;line-height:1.4">
+                    Reader ini diletakkan khusus di garis Finish. Semua tag yang terbaca langsung mencatat <b>Finish Time & Gun Time</b>.
+                </div>
+            </div>
+
+            <div class="gate_mode_card" id="gateCard_split" onclick="raceSetGateMode('split')" style="border:1px solid #cbd5e1;padding:10px;border-radius:6px;cursor:pointer;background:#ffffff">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                    <b style="font-size:13px;color:#7c3aed">🔀 Pisah Port Antena (Port Split)</b>
+                    <input type="radio" name="gateModeRadio" id="radioGate_split">
+                </div>
+                <div style="font-size:11.5px;color:#64748b;line-height:1.4">
+                    Antena Port 1-4 difungsikan sebagai <b>Start Gate</b>, sedangkan Port 5-8 (atau 5-12) difungsikan sebagai <b>Finish Gate</b>.
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <!-- Dual Reader Setup (8-Port + 4-Port = 12 Antena) -->
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">📡 Konfigurasi Dual Reader (1x 8-Port + 1x 4-Port = 12 Antena Total)</b></legend>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
+            <!-- Reader 1: Host ESP32 -->
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:6px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <b style="color:#0f172a">Reader 1 (Host ESP32 - 8 Port)</b>
+                    <span class="reader_badge online">Port 1 - 8</span>
+                </div>
+                <div style="font-size:11.5px;color:#475569;margin-bottom:4px">
+                    <b>Koneksi:</b> Direct Internal Reader / Host IP<br>
+                    <b>Status:</b> <span id="r1DetailStatus" style="color:#059669;font-weight:bold">Siap / Terhubung</span>
+                </div>
+            </div>
+
+            <!-- Reader 2: Secondary Reader (4-Port) -->
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:6px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <label style="display:flex;align-items:center;gap:6px;font-weight:bold;cursor:pointer;color:#0f172a">
+                        <input type="checkbox" id="chkEnableReader2" onchange="raceOnToggleReader2Checkbox(this.checked)">
+                        Reader 2 (Secondary 4-Port)
+                    </label>
+                    <span class="reader_badge" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd">Port 9 - 12</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+                    <span style="font-size:11.5px;color:#475569">IP Reader 2:</span>
+                    <input type="text" id="reader2IpInput" class="style_input_text mono" style="flex:1;height:26px"
+                           value="http://192.168.1.117" placeholder="http://192.168.1.117">
+                </div>
+                <div style="font-size:11.5px;color:#475569">
+                    <b>Status:</b> <span id="r2DetailStatus" style="color:#64748b;font-weight:bold">Nonaktif</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveDualReaderFromDrawer()">💾 Simpan Konfigurasi Reader</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px"
+                    onclick="raceTestReader2Connection()">⚡ Tes Koneksi / Ping Reader 2</button>
+        </div>
+    </fieldset>
+</div>
+
+<!-- ── Panel 8: Setting Dead Zone & Anti Lalu-Lalang ─────────────────── -->
+<div id="tabPanel_deadzone" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">🛡️</span>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Dead Zone & Filter Anti Lalu-Lalang (Pre-Race Wave Lock)</b>
+        </div>
+        <span id="deadZonePanelBadge" class="deadzone_badge">Anti-Lalu: Aktif</span>
+    </div>
+
+    <!-- Penjelasan Fitur -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;color:#334155;line-height:1.5">
+        ℹ️ <b>Fungsi Perlindungan Timing Race:</b><br>
+        • <b>🛡️ Dead Zone (Blind Window):</b> Durasi minimal berlari (dalam satuan <b>menit</b>) sebelum seorang peserta diizinkan dicatat finish. Mencegah pelari yang baru saja start atau mondar-mandir di dekat garis finish terhitung finish secara keliru / prematur.<br>
+        • <b>🔒 Kunci Pra-Lomba (Pre-Race Wave Lock):</b> Sistem akan secara otomatis <b>mengabaikan dan menolak</b> tag pelari jika wave kategori pelari tersebut <b>belum dimulai (READY)</b>. Pelari yang melakukan pemanasan atau lalu-lalang di dekat antena tidak akan tercatat dan tidak merusak timing lomba.
+    </div>
+
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">🔒 Kunci Pra-Lomba (Anti Lalu-Lalang Sebelum Start)</b></legend>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:bold;cursor:pointer;color:#0f172a;margin-bottom:4px">
+            <input type="checkbox" id="chkPreRaceLock" checked onchange="raceSaveDeadZoneFromDrawer()">
+            <span>Aktifkan Kunci Pra-Lomba (Tolak / abaikan pembacaan tag jika Wave kategori pelari belum start)</span>
+        </label>
+        <div style="font-size:11px;color:#64748b;margin-left:22px">
+            <i>Sangat direkomendasikan untuk posisi Start & Finish yang sama. Peserta kategori lain yang belum waktunya start bebas berdiri di area tanpa risiko terbaca timingnya.</i>
+        </div>
+    </fieldset>
+
+    <fieldset class="style_fieldset" style="margin-bottom:12px">
+        <legend><b style="color:#0369a1">⏱️ Durasi Minimal Lari Dead Zone per Kategori (Menit)</b></legend>
+        <div class="cot_grid" id="deadZoneGridInputs"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveDeadZoneFromDrawer()">💾 Simpan Dead Zone</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyDeadZonePreset('standard')">⏱️ Preset Standar (5K: 12m, 10K: 25m, 21K: 50m)</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyDeadZonePreset('short')">⚡ Preset Cepat / Short Course</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:11.5px"
+                    onclick="raceApplyDeadZonePreset('marathon')">🏃 Preset Marathon (Full Distance)</button>
+        </div>
+    </fieldset>
+</div>
+
+<!-- ── Panel 9: Setting Master Kategori ──────────────────────────────── -->
+<div id="tabPanel_categories" class="race_panel" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:18px">🏷️</span>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Master Kategori Lomba</b>
+        </div>
+        <span id="catTotalSummaryPanel" style="font-size:11.5px;color:#64748b"></span>
+    </div>
+
+    <!-- Form Tambah / Edit Kategori -->
+    <fieldset class="style_fieldset" style="margin-bottom:12px;background:#f8fafc;border-color:#cbd5e1">
+        <legend><b id="categoryFormTitlePanel" style="color:#0369a1">+ Tambah Kategori Baru</b></legend>
+        <input type="hidden" id="catFormModePanel" value="ADD">
+        <input type="hidden" id="catFormOriginalNamePanel" value="">
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;margin-bottom:6px">
+            <div class="cot_item">
+                <label>Nama Kategori *</label>
+                <input type="text" id="catInputNamePanel" class="style_input_text font_bold" placeholder="Misal: 5K, Kids, Master">
+            </div>
+            <div class="cot_item">
+                <label>Batas COT (JJ:MM:DD) *</label>
+                <input type="text" id="catInputCotPanel" class="style_input_text mono" placeholder="01:00:00" value="01:00:00">
+            </div>
+            <div class="cot_item">
+                <label>Dead Zone (Menit) *</label>
+                <input type="number" id="catInputDeadZonePanel" class="style_input_text mono" placeholder="10" value="10" min="1" max="600">
+            </div>
+            <div class="cot_item">
+                <label>Jadwal Gun Start</label>
+                <input type="text" id="catInputSchedulePanel" class="style_input_text mono" placeholder="06:00:00 (Opsional)">
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <input type="text" id="catInputDescPanel" class="style_input_text" style="flex:1 1 180px;height:28px" placeholder="Deskripsi singkat kategori (opsional)...">
+            <button type="button" id="btnSaveCategoryPanel" class="style_fieldset_div_button btn_assign font_bold" style="height:28px;font-size:11.5px;padding:0 12px"
+                    onclick="raceSaveCategoryFormPanel()">💾 Simpan Kategori</button>
+            <button type="button" id="btnCancelCategoryEditPanel" class="style_fieldset_div_button btn_tool" style="height:28px;font-size:11px;display:none"
+                    onclick="raceResetCategoryFormPanel()">Batal Edit</button>
+        </div>
+    </fieldset>
+
+    <!-- Tabel Daftar Kategori Aktif -->
+    <div style="font-size:12px;font-weight:bold;color:#334155;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+        <span>📋 Daftar Kategori Terdaftar:</span>
+    </div>
+
+    <div class="tag_table_wrap">
+        <table class="tag_table">
+            <thead>
+                <tr>
+                    <th style="width:35px">No.</th>
+                    <th style="width:110px">Kategori</th>
+                    <th style="width:95px">Batas COT</th>
+                    <th style="width:90px">Dead Zone</th>
+                    <th style="width:110px">Jadwal Start</th>
+                    <th style="width:85px">Peserta</th>
+                    <th style="width:110px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="categoryPanelTableBody"></tbody>
+        </table>
+    </div>
+
+    <div style="margin-top:8px;font-size:11px;color:#64748b">
+        💡 <i>Mengubah nama kategori secara otomatis memperbarui kategori pada seluruh data peserta terkait di database.</i>
+    </div>
+</div>
+
+<!-- ── Modal Edit Peserta Lengkap (13 Kolom) ────────────────────────── -->
+<div id="editRunnerModal" class="runner_modal_overlay" style="display:none">
+    <div class="runner_modal_box">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0">
+            <b style="font-size:13px;color:#0f172a">✏️ Edit Data Peserta & Tag BIB (13 Kolom)</b>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:11px"
+                    onclick="raceCloseEditRunnerModal()">✕ Tutup</button>
+        </div>
+        <input type="hidden" id="editOriginalBib">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cot_item">
+                <label>1. No. Urut:</label>
+                <input type="text" id="editRunnerNo" class="style_input_text mono" readonly style="background:#f1f5f9">
+            </div>
+            <div class="cot_item">
+                <label>2. ID / Tag EPC:</label>
+                <input type="text" id="editRunnerId" class="style_input_text mono font_bold">
+            </div>
+            <div class="cot_item">
+                <label>3. BIB Number:</label>
+                <input type="text" id="editRunnerBib" class="style_input_text mono font_bold">
+            </div>
+            <div class="cot_item">
+                <label>4. BIB Name:</label>
+                <input type="text" id="editRunnerBibName" class="style_input_text font_bold">
+            </div>
+            <div class="cot_item" style="grid-column:1 / -1">
+                <label>5. Participant (Nama Lengkap):</label>
+                <input type="text" id="editRunnerName" class="style_input_text font_bold">
+            </div>
+            <div class="cot_item">
+                <label>6. Gender:</label>
+                <select id="editRunnerGender" class="style_fieldset_select">
+                    <option value="L">L (Laki-laki / Pria)</option>
+                    <option value="P">P (Perempuan / Wanita)</option>
+                </select>
+            </div>
+            <div class="cot_item">
+                <label>7. Event:</label>
+                <input type="text" id="editRunnerEvent" class="style_input_text">
+            </div>
+            <div class="cot_item">
+                <label>8. Category:</label>
+                <select id="editRunnerCategory" class="style_fieldset_select">
+                    <option value="5K">5K</option>
+                    <option value="10K">10K</option>
+                    <option value="21K">21K</option>
+                    <option value="42K">Marathon</option>
+                    <option value="Master">Master</option>
+                </select>
+            </div>
+            <div class="cot_item">
+                <label>9. Registered:</label>
+                <input type="text" id="editRunnerRegistered" class="style_input_text">
+            </div>
+            <div class="cot_item">
+                <label>10. Blood Type (Gol. Darah):</label>
+                <select id="editRunnerBloodType" class="style_fieldset_select">
+                    <option value="—">—</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="AB">AB</option>
+                    <option value="O">O</option>
+                </select>
+            </div>
+            <div class="cot_item">
+                <label>11. No. Hp Peserta:</label>
+                <input type="text" id="editRunnerPhone" class="style_input_text" placeholder="08...">
+            </div>
+            <div class="cot_item">
+                <label>12. No.Hp Darurat:</label>
+                <input type="text" id="editRunnerEmergency" class="style_input_text" placeholder="08...">
+            </div>
+            <div class="cot_item">
+                <label>13. Email:</label>
+                <input type="email" id="editRunnerEmail" class="style_input_text" placeholder="peserta@gmail.com">
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:8px;border-top:1px solid #e2e8f0">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveEditRunnerModal()">💾 Simpan Perubahan</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px;margin-left:auto"
+                    onclick="raceCloseEditRunnerModal()">Batal</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal Edit Race Result (Penyesuaian Waktu & Status Juri) ───────── -->
+<div id="editResultModal" class="runner_modal_overlay" style="display:none">
+    <div class="runner_modal_box" style="max-width:560px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0">
+            <b style="font-size:13px;color:#0f172a">✏️ Edit Hasil Race & Catatan Juri</b>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:24px;font-size:11px"
+                    onclick="raceCloseEditResultModal()">✕ Tutup</button>
+        </div>
+        <input type="hidden" id="editResultBib">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cot_item">
+                <label>BIB & Nama Peserta:</label>
+                <input type="text" id="editResultRunnerLabel" class="style_input_text font_bold" readonly style="background:#f1f5f9">
+            </div>
+            <div class="cot_item">
+                <label>Status Hasil:</label>
+                <select id="editResultStatus" class="style_fieldset_select font_bold">
+                    <option value="FINISHED">FINISHED (Sah)</option>
+                    <option value="OVER_COT">OVER COT (Melewati Batas)</option>
+                    <option value="STARTED">STARTED (Masih di Jalur)</option>
+                    <option value="REGISTERED">REGISTERED (Belum Start)</option>
+                    <option value="DNF">DNF (Did Not Finish)</option>
+                    <option value="DSQ">DSQ (Disqualified)</option>
+                </select>
+            </div>
+            <div class="cot_item">
+                <label>Gun Time Start (Jam):</label>
+                <input type="text" id="editResultGunStart" class="style_input_text mono" placeholder="06:00:00">
+            </div>
+            <div class="cot_item">
+                <label>Gun Finish Time (Jam):</label>
+                <input type="text" id="editResultGunFinish" class="style_input_text mono" placeholder="06:21:45">
+            </div>
+            <div class="cot_item">
+                <label>Chip Time Start (Jam):</label>
+                <input type="text" id="editResultChipStart" class="style_input_text mono" placeholder="06:00:15">
+            </div>
+            <div class="cot_item">
+                <label>Chip Finish Time (Jam):</label>
+                <input type="text" id="editResultChipFinish" class="style_input_text mono" placeholder="06:21:45">
+            </div>
+            <div class="cot_item">
+                <label>Gun Time Duration (Gross):</label>
+                <input type="text" id="editResultGunTime" class="style_input_text mono font_bold" placeholder="00:21:45.00">
+            </div>
+            <div class="cot_item">
+                <label>Chip Time Duration (Net):</label>
+                <input type="text" id="editResultChipTime" class="style_input_text mono font_bold" placeholder="00:21:30.00">
+            </div>
+            <div class="cot_item" style="grid-column:1 / -1">
+                <label>Notes / Catatan Juri & Timing:</label>
+                <input type="text" id="editResultNotes" class="style_input_text" placeholder="Misal: Sesuai COT, Penalti 5s, DNF di KM 8, dll.">
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:6px;margin-top:12px;padding-top:8px;border-top:1px solid #e2e8f0;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
+                    onclick="raceSaveEditResultModal()">💾 Simpan Hasil</button>
+            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:30px;font-size:11.5px"
+                    onclick="raceSetRunnerQuickStatus('DNF')">🛑 Tandai DNF</button>
+            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:30px;font-size:11.5px;background:#7f1d1d;color:#fff"
+                    onclick="raceSetRunnerQuickStatus('DSQ')">❌ Tandai DSQ</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px;margin-left:auto"
+                    onclick="raceCloseEditResultModal()">Batal</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Modal Konfirmasi PIN & Dialog Tengah Halaman ────────────────── -->
+<div id="raceConfirmModal" class="runner_modal_overlay" style="display:none;z-index:99999">
+    <div class="runner_modal_box" style="max-width:440px;text-align:center;padding:22px 24px;border-radius:12px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4)">
+        <div style="font-size:38px;margin-bottom:6px" id="raceConfirmIcon">🔒</div>
+        <b style="font-size:16px;color:#0f172a;display:block;margin-bottom:8px" id="raceConfirmTitle">Konfirmasi Pengaman PIN</b>
+        <div style="font-size:12.5px;color:#475569;line-height:1.5;margin-bottom:14px;text-align:center" id="raceConfirmMsg">
+            Masukkan PIN pengaman untuk melanjutkan aksi ini:
+        </div>
+
+        <!-- PIN Input Box -->
+        <div id="raceConfirmPinWrap" style="margin-bottom:14px">
+            <input type="password" id="raceConfirmPinInput" class="style_input_text font_bold mono"
+                   style="height:40px;font-size:20px;letter-spacing:6px;text-align:center;width:180px;border:2px solid #cbd5e1;border-radius:8px"
+                   placeholder="PIN..." maxlength="10" autocomplete="off"
+                   onkeydown="if(event.key==='Enter') raceExecuteConfirmModal(); if(event.key==='Escape') raceCloseConfirmModal();">
+            <div id="raceConfirmPinError" style="color:#ef4444;font-size:12px;font-weight:bold;margin-top:6px;display:none">
+                ❌ PIN salah! Silakan coba lagi.
+            </div>
+            <div style="font-size:11px;color:#64748b;margin-top:6px" id="raceConfirmPinHint">
+                💡 <i>Ketik PIN <b>1234</b> untuk konfirmasi.</i>
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px">
+            <button type="button" id="btnRaceConfirmCancel" class="style_fieldset_div_button btn_tool"
+                    style="height:34px;font-size:12.5px;padding:0 18px;min-width:100px" onclick="raceCloseConfirmModal()">
+                ✕ Batal
+            </button>
+            <button type="button" id="btnRaceConfirmOk" class="style_fieldset_div_button btn_assign font_bold"
+                    style="height:34px;font-size:12.5px;padding:0 20px;min-width:130px;background:#ef4444;color:#ffffff;border:1px solid #dc2626"
+                    onclick="raceExecuteConfirmModal()">
+                Konfirmasi
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>window.addEventListener('DOMContentLoaded', () => { i18n(); raceInit(); });</script>
+</body>
+</html>

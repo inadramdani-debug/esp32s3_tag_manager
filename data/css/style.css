@@ -1,0 +1,1564 @@
+/* Layout ported from the URA4 web UI (css/main.css + css/common.css) so the
+   board's page looks like the reader's. Colours and transitions are the
+   original's: sidebar #2a3f54, hover #35495d, page body #eeeeee. */
+
+* { margin: 0; padding: 0; }
+
+body {
+    background-color: #eeeeee;
+    padding: 5px;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+}
+
+/* The shell owns the viewport; the sidebar and .main cover it entirely, so its
+   own background only shows for the instant before they paint. */
+body.shell {
+    overflow: hidden;
+    padding: 0;
+    background-color: #2a3f54;
+}
+
+/* ------------------------------------------------------------------ sidebar */
+.navbar { position: relative; width: 100vw; background-color: #ffffff; }
+
+#checkbox { display: none; }
+
+.navbar > label {
+    position: absolute;
+    top: 0;
+    left: 70px;
+    width: 50px;
+    height: 43px;
+    font-size: 30px;
+    color: #5a738e;
+    background-color: #ededed;
+    padding-left: 20px;
+    border: 1px solid #d9dee4;
+    cursor: pointer;
+    transition: all 0.5s;
+    z-index: 2;
+}
+
+.navbar > label img { width: 35px; margin-left: 7px; margin-top: 3px; }
+
+.navbar ul {
+    list-style: none;
+    width: 70px;
+    height: 100vh;
+    background-color: #2a3f54;
+    transition: all 0.5s;
+    overflow-y: auto;
+}
+
+/* The original hides the scrollbar entirely. On a short window that leaves the
+   last menu entries unreachable with no hint they are there, so keep a slim one. */
+.navbar ul::-webkit-scrollbar { width: 6px; }
+.navbar ul::-webkit-scrollbar-track { background: transparent; }
+.navbar ul::-webkit-scrollbar-thumb { background: #4a6076; border-radius: 3px; }
+
+/* Row heights are trimmed from the original's 70px: seven entries plus the six
+   Config children and the logo come to 576px, which fits a 600px-tall window.
+   Anything shorter than that still scrolls — see the scrollbar rule below. */
+.navbar ul li { height: 48px; }
+
+/* Top-level rows only. A bare `.navbar ul li:first-child` also matches the
+   first item of the nested Config menu, which gave "Base" flex centering and
+   the 56px row height while its siblings stayed 30px — so it sat indented and
+   taller than the rest. */
+.navbar #menu > li:first-child {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 56px;
+}
+
+.navbar #menu > li:first-child img { width: 40px; height: 40px; border-radius: 50%; }
+
+.navbar #menu > li:first-child span {
+    color: #fff;
+    white-space: nowrap;
+    padding-left: 10px;
+    display: none;
+}
+
+.navbar ul li a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    color: #d1d1d1;
+    text-decoration: none;
+}
+
+.navbar ul li a img { width: 22px; margin-bottom: 6px; }
+
+.navbar ul li a span { font-size: 12px; white-space: nowrap; }
+
+.navbar ul li a:hover { color: #fff; background-color: #35495d; }
+
+/* The nested menu would otherwise inherit the 70px width and 100vh height from
+   .navbar ul above, leaving 10px of text after the 60px indent. The original
+   patched this with an inline style="width:100%"; doing it here instead. */
+.navbar ul li ul {
+    display: none;
+    width: 100%;
+    height: auto;
+    transition: all 0.5s;
+}
+
+/* The Config row also *contains* the submenu, so its fixed height must grow to
+   fit: a bare 54px squashes the children into single letters. */
+.navbar ul li.has-children { height: auto; }
+.navbar ul li.has-children > a { height: 48px; }
+
+/* expanded sidebar — the checkbox is the only state */
+.navbar input:checked + label { left: 200px; }
+.navbar input:checked ~ ul { width: 200px; }
+.navbar input:checked ~ #menu > li:first-child { justify-content: flex-start; }
+/* the logo needs the same left inset the other rows get, or it sits flush
+   against the edge while every icon below it is indented */
+.navbar input:checked ~ #menu > li:first-child img { margin-left: 25px; }
+.navbar input:checked ~ #menu > li:first-child span { display: block; }
+.navbar input:checked ~ ul li a { flex-direction: row; justify-content: flex-start; }
+.navbar input:checked ~ ul li a img { width: 20px; margin: 0 15px 0 25px; }
+.navbar input:checked ~ ul li a span { font-size: 14px; }
+.navbar input:checked ~ div { left: 200px; }
+.navbar input:checked ~ ul li ul { display: block; overflow: hidden; }
+.navbar input:checked ~ ul li ul li { height: 30px; }
+.navbar input:checked ~ ul li ul li a {
+    width: 100%;
+    height: 100%;
+    padding-left: 60px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+#second_ul, #race_second_ul { max-height: 0; overflow: hidden; transition: max-height 0.2s ease-out; }
+#second_ul.open, #race_second_ul.open { max-height: 800px; transition: max-height 0.2s ease-in; }
+
+.first-level-menu .toggle-icon { padding-left: 0; margin-left: 12px; transition: transform 0.2s ease-in-out; }
+.first-level-menu .toggle-icon.open { transform: rotate(90deg); }
+
+.langImg {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    right: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* --------------------------------------------------------------- page body */
+/* Pinned to the viewport rather than sized as a percentage of .navbar: the
+   parent's height comes from the sidebar's 100vh, which leaves a gap. */
+.main {
+    position: fixed;
+    top: 45px;
+    left: 70px;
+    right: 0;
+    bottom: 0;
+    padding: 5px;
+    background-color: #eeeeee;
+    transition: all 0.5s;
+    overflow: auto;
+}
+
+.main iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.placeholder {
+    padding: 40px;
+    color: #5a738e;
+    font-size: 16px;
+    text-align: center;
+}
+.placeholder h2 { font-size: 20px; margin-bottom: 10px; color: #2a3f54; }
+
+/* ------------------------------------------------------------------- toast */
+#toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 60%;
+    min-width: 150px;
+    padding: 8px 14px;
+    color: #fff;
+    line-height: 1.5;
+    text-align: center;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, .7);
+    font-size: 16px;
+    word-break: break-word;
+    z-index: 999999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .5s ease-in;
+}
+#toast.show { opacity: 1; }
+
+/* --------------------------------------------------- fieldsets (URA4 style) */
+.style_fieldset {
+    margin-bottom: 0.5rem;
+    margin-right: 0.2rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    background-color: #EBEBEB;
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 4px;
+}
+
+.style_fieldset legend { font-size: 15px; padding: 0 6px; }
+
+/* URA4's span carries a 10px top padding to nudge labels down against its
+   taller controls. With our control heights that just pushes every label below
+   the value beside it, so align labels and values on the text baseline instead
+   — done on the row, since flex items do not inherit vertical-align. */
+.style_fieldset_div_nowrap,
+.style_fieldset_div,
+.style_fieldset_div_wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.style_fieldset_span { user-select: none; }
+
+.style_fieldset_select,
+.style_input_text {
+    height: 2rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 15px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.style_fieldset_div { margin: 6px 20px 6px 0; }
+
+.style_fieldset_div_wrap { display: flex; flex-flow: wrap; }
+
+.style_fieldset_div_nowrap { margin: 8px 20px 8px 0; display: block; white-space: nowrap; }
+
+.style_fieldset_div_button {
+    width: 100px;
+    height: 30px;
+    margin: 2px 5px;
+    padding: 0 2px;
+    font-size: 15px;
+    font-weight: normal;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #f7f7f7;
+}
+.style_fieldset_div_button:hover { background-color: #e8e8e8; }
+
+/* device info grid */
+.info_grid {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) 1fr;
+    gap: 6px 12px;
+    font-size: 15px;
+}
+.info_grid div:nth-child(odd) { color: #5a738e; }
+
+/* ------------------------------------------------------------- tag table */
+/* Matches the reader's own table: centred cells, visible borders, a light
+   header, and wide EPC/TID/USER columns that scroll sideways when they do not
+   fit. */
+.tag_table_wrap {
+    width: 100%;
+    max-height: 60vh;
+    overflow: auto;
+    margin: 5px 0 20px;
+}
+
+.tag_table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+    border: 1px solid #979595;
+    font-size: 14px;
+    background: #fff;
+}
+
+.tag_table th, .tag_table td {
+    border: 1px solid #979595;
+    padding: 0 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.tag_table th {
+    position: sticky;
+    top: 0;
+    height: 30px;
+    background: #ededed;
+    color: #333;
+    font-weight: normal;
+}
+
+.tag_table td { height: 25px; }
+
+.tag_table tbody tr:hover { background-color: #cdcdcd; }
+
+/* EPC, TID and USER hold long hex strings; give them room like the reader does
+   instead of letting them wrap into unreadable blocks. */
+.tag_table th:nth-child(2), .tag_table td:nth-child(2),
+.tag_table th:nth-child(3), .tag_table td:nth-child(3),
+.tag_table th:nth-child(4), .tag_table td:nth-child(4) {
+    min-width: 220px;
+}
+
+.tag_table .mono { font-family: Consolas, monospace; }
+
+.tag_table .empty {
+    text-align: center;
+    color: #999;
+    padding: 24px;
+    border: 0;
+}
+
+#btnStart.running { background-color: #d9534f; color: #fff; border-color: #c9302c; }
+
+.style_fieldset_div_button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+/* Collapsed options row: the checkbox plus a live count of the whitelist, so
+   it is clear when a list is active even with the panel closed. */
+.inv_filter_toggle {
+    margin: 4px 0 8px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px 18px;
+    flex-wrap: wrap;
+}
+.inv_filter_toggle .toggle_head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+.inv_filter_toggle .hint { margin-left: 0; }
+
+.hint { color: #888; margin-left: 8px; }
+
+/* Hex masks are read character by character, so a proportional font makes
+   them hard to check against the tag data. */
+.mono_input { font-family: Consolas, monospace; letter-spacing: .5px; }
+
+/* The tag table needs the eight columns to breathe; let it scroll sideways
+   rather than squeeze EPC/TID/USER into nothing. */
+.tag_table th, .tag_table td { white-space: nowrap; }
+
+/* Antenna power / enable. Flowed rather than gridded: a grid sized to the full
+   row width pushed the Set/Get buttons onto their own line. */
+.ant_grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+}
+
+.ant_grid > div { white-space: nowrap; }
+
+/* Set/Get sits on its own line at the end of every fieldset, so the pairs line
+   up down the page. It is a normal in-flow row rather than an absolutely
+   positioned one: pinning it to the fieldset's right edge needed a matching
+   padding reservation, and anything wider than that (the six GPO selects) ran
+   underneath it while narrow screens cut the buttons off entirely. */
+/* Set/Get sits inline after the last field, exactly as on the reader's own
+   page: the fieldset is already a wrapping flex row, so the buttons follow the
+   fields and only drop to a second line when the row is genuinely full.
+   An earlier version forced `flex-basis: 100%`, which pushed them onto their
+   own line under every fieldset — and before that, absolute positioning, which
+   needed a padding reservation that wide rows (GPO's six selects) overran. */
+.button_row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 8px 0 0 12px;
+}
+
+/* Narrow screens: once the fields alone fill the row, the buttons start a new
+   line rather than being squeezed. */
+@media (max-width: 480px) {
+    .button_row { margin-left: 0; }
+}
+
+/* The board's own settings sit below the reader's; the tint marks them as
+   belonging to a different device. */
+.board_fieldset { background-color: #e4ebf2; }
+
+/* Subnet scan results: clickable addresses that fill the reader IP field. */
+.scan_result { width: 100%; font-size: 14px; color: #2a3f54; }
+.scan_hit {
+    color: #1a6fb5;
+    text-decoration: underline;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+/* Tag Count is the number people actually watch during an inventory, so it is
+   sized to be readable from a step back on a tablet. */
+
+.wl_textarea {
+    width: 100%;
+    height: 140px;
+    box-sizing: border-box;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+/* Tag data can be long (a full EPC bank is 12 hex, a user bank more), so it
+   gets a textarea rather than a one-line input. */
+.rw_textarea {
+    width: 100%;
+    height: 70px;
+    box-sizing: border-box;
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+/* Heads-up on the Network page: changing these settings moves the reader. */
+.net_note {
+    margin: 0 0 8px 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: #7a5c00;
+    background: #fff6d9;
+    border: 1px solid #e8d48a;
+    border-radius: 4px;
+}
+
+/* Inventory counters: one centred horizontal row. The items are kept on a
+   single line while they fit and only wrap when the window is genuinely too
+   narrow, rather than stacking by default. */
+/* The row has to fit five label/value pairs plus the two buttons side by side:
+   measured at roughly 1230px of content, so the gaps are kept tight and the
+   font a little smaller than a standalone heading would be. It still wraps on
+   a genuinely narrow window rather than overflowing. */
+.counter_row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px 16px;
+    width: 100%;
+}
+
+.counter_item { white-space: nowrap; }
+
+/* Inline buttons in the counter row: the shared .button_row rule adds a top
+   margin meant for a row of its own, which would knock these off the baseline. */
+.counter_item .style_fieldset_div_button { margin: 0 0 0 4px; }
+
+/* Every number is the same size, so the row reads as one unit rather than one
+   figure shouting over the others. */
+.big_count {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2a3f54;
+    line-height: 1.1;
+    vertical-align: middle;
+    padding: 0 2px;
+}
+
+/* Device Info action buttons. Given their own row with a real gap and a width
+   that fits the longest label, instead of the shared 100px button width which
+   wrapped "Reboot Reader" onto two lines. */
+.dev_buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+.dev_buttons .style_fieldset_div_button {
+    width: auto;
+    min-width: 110px;
+    padding: 0 14px;
+    height: 32px;
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- box map compact single-screen layout */
+.box_compact_panel {
+    background: #f7f9fa;
+    border: 1px solid #d5dde5;
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+}
+
+.box_compact_row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    width: 100%;
+}
+
+.grid_3col {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 860px) {
+    .grid_3col {
+        grid-template-columns: 1fr;
+    }
+}
+
+.layer_card {
+    margin: 0 !important;
+    padding: 3px 5px 5px !important;
+    background: #ffffff !important;
+    border: 1px solid #cdd5de !important;
+    border-radius: 4px !important;
+    box-sizing: border-box;
+}
+
+.layer_title {
+    font-size: 11px !important;
+    font-weight: bold;
+    color: #2a3f54;
+    padding: 0 4px !important;
+    line-height: 1.2;
+}
+
+.box_grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 1px 0 0;
+}
+
+.box_cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 23px;
+    min-height: 23px;
+    padding: 1px;
+    border: 1px solid #b8c4ce;
+    border-radius: 3px;
+    background: #ffffff;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    transition: background-color 0.1s, border-color 0.1s;
+}
+
+.box_cell:hover {
+    background: #eef4fa;
+    border-color: #337ab7;
+}
+
+.box_pos {
+    font-size: 8.5px;
+    color: #888888;
+    line-height: 9px;
+    font-weight: 500;
+}
+
+.box_epc {
+    font-family: Consolas, monospace;
+    font-size: 10px;
+    font-weight: bold;
+    line-height: 11px;
+    white-space: nowrap;
+    color: #333333;
+}
+
+.box_cell.sel {
+    outline: 2px solid #1a6fb5;
+    outline-offset: -1px;
+    background: #e3f0fc !important;
+}
+
+.box_cell.filled {
+    background: #eef6fc;
+    border-color: #9ac2e8;
+}
+.box_cell.filled .box_epc {
+    color: #1a4f78;
+}
+
+.box_cell.ok {
+    border-color: #4cae4c;
+    background: #edf8ee;
+}
+.box_cell.ok .box_epc {
+    color: #2b7d2b;
+}
+
+.box_cell.miss {
+    border-color: #d9534f;
+    background: #fdf0f0;
+}
+.box_cell.miss .box_epc {
+    color: #c9302c;
+}
+
+.box_cell.dup {
+    border-color: #f0ad4e;
+    background: #fff8ec;
+}
+.box_cell.dup .box_epc {
+    color: #b37400;
+}
+
+/* -------------------------------------------------- compact toolbar buttons */
+.box_compact_panel .style_fieldset_div_button,
+.btn_action,
+.btn_assign,
+.btn_db,
+.btn_tool {
+    width: auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+.btn_action {
+    height: 26px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 3px;
+    margin: 0 !important;
+}
+
+.btn_read {
+    background-color: #2a3f54;
+    color: #ffffff;
+    border-color: #203142;
+}
+.btn_read:hover { background-color: #38536e; }
+
+.scan_btn_group {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    background: #ffffff;
+    padding: 0 2px;
+    height: 26px;
+    box-sizing: border-box;
+}
+.scan_btn_group .style_fieldset_div_button {
+    border: 0;
+    background: transparent;
+    height: 100%;
+    margin: 0;
+    padding: 0 8px;
+    font-size: 12px;
+}
+.scan_btn_group .style_fieldset_div_button:hover { background: #e8e8e8; }
+
+.scan_time_wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 4px;
+    border-left: 1px solid #dcdcdc;
+    height: 100%;
+}
+
+.cell_badge_wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 2px;
+    white-space: nowrap;
+}
+
+.cell_badge {
+    background: #2a3f54;
+    color: #ffffff;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.cell_epc_input {
+    flex: 1 1 180px;
+    max-width: 280px;
+    height: 26px;
+    font-size: 12px;
+    padding: 0.1rem 0.5rem;
+}
+
+.btn_assign {
+    background-color: #337ab7;
+    color: #ffffff;
+    border-color: #2e6da4;
+    height: 26px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 0 !important;
+}
+.btn_assign:hover { background-color: #286090; }
+
+.btn_danger {
+    background-color: #d9534f;
+    color: #ffffff;
+    border-color: #d43f3a;
+}
+.btn_danger:hover { background-color: #c9302c; }
+
+.btn_danger_sm {
+    background-color: #fff0f0;
+    color: #c9302c;
+    border-color: #eac5c5;
+}
+.btn_danger_sm:hover { background-color: #fce1e1; }
+
+.box_profile_select {
+    height: 26px;
+    font-size: 12px;
+    padding: 0 4px;
+    max-width: 140px;
+}
+
+.box_name_input {
+    height: 26px;
+    font-size: 12px;
+    padding: 0.1rem 0.4rem;
+    max-width: 120px;
+}
+
+.btn_db {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 11px;
+    margin: 0 !important;
+}
+
+.btn_tool {
+    height: 24px;
+    padding: 0 8px;
+    font-size: 11px;
+    background: #ffffff;
+    margin: 0 !important;
+}
+
+.stat_badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    background: #ffffff;
+    border: 1px solid #d5dde5;
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.stat_badge b {
+    color: #2a3f54;
+    font-size: 12px;
+    margin: 0 3px;
+}
+
+.scan_bar_wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 4px 0 2px;
+}
+
+.scan_bar {
+    flex: 1 1 auto;
+    max-width: 400px;
+    height: 12px;
+    border: 1px solid #979595;
+    border-radius: 3px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.scan_bar_fill {
+    width: 0;
+    height: 100%;
+    background: #2a3f54;
+    transition: width .2s linear;
+}
+
+.box_results_panel {
+    margin-top: 6px;
+    width: 100%;
+}
+
+/* -------------------------------------------------- Layer Tabs (Portrait / C5) */
+.layer_tabs_wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 4px 0 6px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.layer_tab {
+    flex: 1 1 auto;
+    height: 28px;
+    min-width: 60px;
+    border: 1px solid #b8c4ce;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #2a3f54;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.layer_tab:hover {
+    background: #eef4fa;
+    border-color: #337ab7;
+}
+
+.layer_tab.active {
+    background: #2a3f54 !important;
+    color: #ffffff !important;
+    border-color: #203142 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.c5_auto_wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #2a3f54;
+    cursor: pointer;
+    user-select: none;
+    background: #ffffff;
+    padding: 2px 6px;
+    border: 1px solid #d5dde5;
+    border-radius: 3px;
+    height: 24px;
+    box-sizing: border-box;
+}
+.c5_auto_wrap input {
+    cursor: pointer;
+}
+
+/* Result Banner */
+.scan_banner {
+    padding: 7px 10px;
+    border-radius: 4px;
+    margin: 4px 0;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    box-sizing: border-box;
+}
+.scan_banner.ok {
+    background: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+}
+.scan_banner.warn {
+    background: #f2dede;
+    color: #a94442;
+    border: 1px solid #ebccd1;
+}
+
+/* -------------------------------------------------- Mobile & Portrait (Chainway C5) */
+@media (max-width: 768px) {
+    /* Navbar off-canvas drawer on mobile */
+    .navbar > label {
+        left: 0 !important;
+        top: 0;
+        width: 44px;
+        height: 44px;
+        padding-left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+    }
+    .navbar > label img {
+        margin: 0;
+        width: 26px;
+    }
+    .navbar ul {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        width: 260px !important;
+        height: 100vh;
+        z-index: 10000;
+        box-shadow: 3px 0 16px rgba(0,0,0,0.4);
+        transition: left 0.3s ease;
+    }
+    .navbar input:checked ~ ul {
+        left: 0 !important;
+    }
+    .navbar input:checked + label {
+        left: 260px !important;
+    }
+    .navbar input:checked ~ #menu > li:first-child span {
+        display: block;
+    }
+    .navbar input:checked ~ ul li a {
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+    .navbar input:checked ~ ul li a span {
+        font-size: 14px;
+    }
+    .navbar input:checked ~ ul li a img {
+        margin: 0 15px 0 25px;
+    }
+
+    .main {
+        left: 0 !important;
+        top: 45px;
+        right: 0;
+        width: 100% !important;
+        padding: 4px !important;
+        box-sizing: border-box;
+    }
+
+    /* Grid adapts cleanly on portrait */
+    .grid_3col {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    /* Touch-friendly buttons and inputs on mobile / C5 */
+    .btn_action {
+        height: 32px !important;
+        font-size: 13px !important;
+        padding: 0 10px !important;
+    }
+    .btn_assign {
+        height: 32px !important;
+        font-size: 13px !important;
+        padding: 0 12px !important;
+    }
+    .btn_db {
+        height: 30px !important;
+        font-size: 12px !important;
+    }
+    .scan_btn_group {
+        height: 32px !important;
+    }
+    .scan_btn_group .style_fieldset_div_button {
+        font-size: 13px !important;
+    }
+    .cell_epc_input {
+        height: 32px !important;
+        font-size: 13px !important;
+        max-width: 100% !important;
+    }
+    .box_profile_select,
+    .box_name_input {
+        height: 30px !important;
+        font-size: 12px !important;
+    }
+    .c5_auto_wrap {
+        height: 30px !important;
+        font-size: 12px !important;
+        padding: 2px 8px !important;
+    }
+    .layer_tab {
+        height: 32px !important;
+        font-size: 12px !important;
+    }
+    .box_cell {
+        height: 30px;
+        min-height: 30px;
+    }
+    .box_epc {
+        font-size: 11px;
+    }
+    .box_pos {
+        font-size: 9.5px;
+    }
+}
+
+/* -------------------------------------------------- API / Webhook Modal */
+.modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.modal_card {
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 480px;
+    padding: 16px;
+    box-sizing: border-box;
+    animation: fadeIn .15s ease-out;
+}
+
+.modal_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #e5e5e5;
+    padding-bottom: 6px;
+}
+
+.modal_title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2a3f54;
+}
+
+.modal_close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888888;
+    line-height: 1;
+    padding: 0 4px;
+}
+.modal_close:hover { color: #222222; }
+
+.modal_row {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.modal_row label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #444444;
+}
+
+.modal_input {
+    width: 100%;
+    height: 30px;
+    font-size: 12px;
+    padding: 2px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.modal_actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.btn_api {
+    background: #1a6fb5 !important;
+    color: #ffffff !important;
+    border-color: #145a96 !important;
+}
+.btn_api:hover {
+    background: #145a96 !important;
+}
+
+/* -------------------------------------------------- Race Timing Module */
+.race_card {
+    background: #ffffff;
+    border: 1px solid #d5dde5;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.race_header_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.clock_container {
+    background: #1e293b;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 6px 0 10px;
+    text-align: center;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.digital_clock {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 38px;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+@media (max-width: 480px) {
+    .digital_clock {
+        font-size: 28px;
+    }
+}
+
+.race_controls_row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn_gun_start {
+    background: #16a34a !important;
+    color: #ffffff !important;
+    border-color: #15803d !important;
+    font-weight: bold !important;
+    font-size: 13px !important;
+    height: 32px !important;
+    padding: 0 16px !important;
+}
+.btn_gun_start:hover { background: #15803d !important; }
+.btn_gun_start:disabled { background: #9ca3af !important; border-color: #9ca3af !important; }
+
+.btn_race_stop {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+    border-color: #b91c1c !important;
+    font-weight: bold !important;
+    font-size: 13px !important;
+    height: 32px !important;
+    padding: 0 14px !important;
+}
+.btn_race_stop:hover { background: #b91c1c !important; }
+.btn_race_stop:disabled { background: #9ca3af !important; border-color: #9ca3af !important; }
+
+.race_badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.race_badge.ready { background: #e2e8f0; color: #475569; }
+.race_badge.running { background: #dcfce7; color: #15803d; border: 1px solid #86efac; animation: pulse 1.5s infinite; }
+.race_badge.stopped { background: #fee2e2; color: #b91c1c; }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.race_panel {
+    background: #ffffff;
+    border: 1px solid #d5dde5;
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+.rank_badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #334155;
+    background: #f1f5f9;
+}
+.rank_badge.top3 {
+    background: #fef08a;
+    color: #854d0e;
+    border: 1px solid #fde047;
+}
+
+.cat_badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.status_tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: bold;
+}
+.status_tag.ok { background: #dcfce7; color: #166534; }
+.status_tag.wait { background: #f1f5f9; color: #64748b; }
+.status_tag.warn { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.status_tag.dnf { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.status_tag.dsq { background: #450a0a; color: #fecaca; border: 1px solid #dc2626; }
+
+.leader_1 {
+    background: #fefce8 !important;
+}
+
+.font_bold { font-weight: bold; }
+.text_green { color: #15803d; }
+
+/* Category Filter Pills */
+.cat_filter_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.cat_filter_btn:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+.cat_filter_btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0369a1;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.3);
+}
+.cat_filter_btn .pill_count {
+    background: rgba(0, 0, 0, 0.08);
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-size: 10.5px;
+    font-weight: bold;
+}
+.cat_filter_btn.active .pill_count {
+    background: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+}
+
+.rank_badge.gold {
+    background: #fef08a;
+    color: #854d0e;
+    border: 1px solid #facc15;
+}
+.rank_badge.silver {
+    background: #e2e8f0;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.rank_badge.bronze {
+    background: #ffedd5;
+    color: #9a3412;
+    border: 1px solid #fdba74;
+}
+
+/* Cut Off Time (COT) Styling */
+.cot_live_bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    margin: 6px 0 2px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.cot_badge_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+.cot_badge_pill.ok { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.cot_badge_pill.warn { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; animation: pulse 1.2s infinite; }
+.cot_badge_pill.expired { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-weight: bold; }
+
+.cot_drawer {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-top: 6px;
+}
+
+.cot_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 6px;
+    margin: 6px 0;
+}
+.cot_item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.cot_item label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #475569;
+}
+.cot_item input {
+    height: 26px;
+    font-family: Consolas, monospace;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+/* Wave Gun Start & Gate Mode Styling */
+.wave_bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 6px 0 4px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+}
+
+.wave_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.wave_pill.running {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.gate_mode_wrap {
+    display: inline-flex;
+    align-items: center;
+    background: #e2e8f0;
+    border-radius: 16px;
+    padding: 2px;
+    gap: 2px;
+}
+.gate_mode_btn {
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 0;
+    background: transparent;
+    color: #475569;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.gate_mode_btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    font-weight: bold;
+}
+.gate_mode_btn.start_active {
+    background: #16a34a;
+    color: #ffffff;
+}
+.gate_mode_btn.finish_active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.chip_time_badge {
+    font-family: Consolas, monospace;
+    font-weight: bold;
+    color: #0284c7;
+    background: #f0f9ff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid #bae6fd;
+}
+
+.gun_time_badge {
+    font-family: Consolas, monospace;
+    font-weight: bold;
+    color: #166534;
+}
+
+.text_warn { color: #b45309; }
+
+/* Dual Reader & Dead Zone Badges & Status */
+.reader_status_bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    margin: 4px 0;
+    font-size: 11.5px;
+    flex-wrap: wrap;
+}
+
+.reader_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+}
+.reader_badge.online {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    color: #047857;
+}
+.reader_badge.polling {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+    animation: pulse 1.2s infinite;
+}
+.reader_badge.disabled {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #9ca3af;
+}
+.reader_badge.offline {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+.deadzone_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    background: #fefce8;
+    border: 1px solid #fef08a;
+    color: #854d0e;
+    font-weight: 600;
+}
+
+/* Gender Badges */
+.badge_gender_l {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: bold;
+    font-size: 11px;
+    border: 1px solid #bae6fd;
+}
+.badge_gender_p {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #fce7f3;
+    color: #be185d;
+    font-weight: bold;
+    font-size: 11px;
+    border: 1px solid #fbcfe8;
+}
+
+/* Runner Edit Modal Popup */
+.runner_modal_overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+.runner_modal_box {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 14px 18px;
+    box-sizing: border-box;
+}
+

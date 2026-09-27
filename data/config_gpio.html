@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>GPIO</title>
+</head>
+<body>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="gpo"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo1"></span>:
+        <select id="gpo1" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo2"></span>:
+        <select id="gpo2" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo3"></span>:
+        <select id="gpo3" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo4"></span>:
+        <select id="gpo4" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo5"></span>:
+        <select id="gpo5" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpo6"></span>:
+        <select id="gpo6" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="gpioSetGpo()" data-i18n="set"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="gpi"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpi1"></span>:
+        <select id="gpi1" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpi2"></span>:
+        <select id="gpi2" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpi3"></span>:
+        <select id="gpi3" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="gpi4"></span>:
+        <select id="gpi4" class="style_fieldset_select" style="width:90px">
+            <option value="high">High</option>
+            <option value="low">Low</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="gpioGet()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    gpioGet();
+});
+</script>
+</body>
+</html>

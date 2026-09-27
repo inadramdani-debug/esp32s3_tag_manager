@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Device Info</title>
+</head>
+<body>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="DeviceInfo"></legend>
+    <div class="info_grid" id="infoGrid"></div>
+    <!-- The four buttons sit on their own line under the grid, spaced so the
+         labels stay on one line: "Reboot Reader" needs ~120px at 15px and was
+         wrapping to two lines in the shared 100px width. -->
+    <div class="dev_buttons">
+        <button class="style_fieldset_div_button" onclick="loadDeviceInfo()" data-i18n="refresh"></button>
+        <button class="style_fieldset_div_button" id="btnFind" onclick="readerScan()" data-i18n="findReader"></button>
+        <button class="style_fieldset_div_button" onclick="readerReboot()" data-i18n="rebootReader"></button>
+        <button class="style_fieldset_div_button" onclick="doReboot()" data-i18n="rebootBoard"></button>
+    </div>
+    <div id="scanResult" class="scan_result"></div>
+</fieldset>
+
+<script>window.addEventListener('DOMContentLoaded', () => { i18n(); loadDeviceInfo(); });</script>
+</body>
+</html>

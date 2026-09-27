@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32-S3 Tag Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+</head>
+<body class="shell">
+
+<!-- Shell copied from the URA4 web UI: collapsible icon sidebar, the page body
+     sits in #pageDiv and is filled by showPage(). -->
+<div class="navbar">
+    <input type="checkbox" id="checkbox" checked>
+    <label for="checkbox"><img src="image/bars.png" alt="menu"></label>
+    <img id="langImage" class="langImg" src="image/lang_en.png" onclick="langChange()" alt="lang">
+    <ul id="menu">
+        <li>
+            <img src="image/uhf.png" alt="">
+            <span>ESP32-S3</span>
+        </li>
+        <li><a href="javascript:showPage('inventory')">
+            <img src="image/inventory.png" alt=""><span data-i18n="Inventory"></span></a></li>
+        <li><a href="javascript:showPage('box_map')">
+            <img src="image/inventory.png" alt=""><span data-i18n="boxMap"></span></a></li>
+        <li class="first-level-menu has-children">
+            <a href="javascript:toggleRaceSecondUl()">
+                <img src="image/bars.png" alt=""><span data-i18n="raceTiming"></span>
+                <img class="toggle-icon" id="raceSecondUlImage" src="image/right.png" alt="">
+            </a>
+            <ul id="race_second_ul">
+                <li><a href="javascript:showRaceTab('gate')"><span>1. 🚪 Setting Gerbang & Reader</span></a></li>
+                <li><a href="javascript:showRaceTab('categories')"><span>2. 🏷️ Setting Kategori</span></a></li>
+                <li><a href="javascript:showRaceTab('cot')"><span>3. ⏱️ Setting Batas COT</span></a></li>
+                <li><a href="javascript:showRaceTab('deadzone')"><span>4. 🛡️ Setting Dead Zone</span></a></li>
+                <li><a href="javascript:showRaceTab('guntime')"><span>5. ⏰ Setting Gun Time</span></a></li>
+                <li><a href="javascript:showRaceTab('runners')"><span>6. 👥 Peserta & Tag BIB</span></a></li>
+                <li><a href="javascript:showRaceTab('control')"><span>7. ⚡ Race Control (Hari H)</span></a></li>
+                <li><a href="javascript:showRaceTab('leaderboard')"><span>8. 🏆 Leaderboard</span></a></li>
+                <li><a href="javascript:showRaceTab('results')"><span>9. 📋 Race Result</span></a></li>
+                <li><a href="javascript:showRaceTab('racedata')"><span>10. 📡 Race Data (Log)</span></a></li>
+            </ul>
+        </li>
+        <li><a href="javascript:showPage('read_write')">
+            <img src="image/readwrite.png" alt=""><span data-i18n="ReadWrite"></span></a></li>
+        <li><a href="javascript:showPage('lock_kill')">
+            <img src="image/lock.png" alt=""><span data-i18n="LockKill"></span></a></li>
+        <li><a href="javascript:showPage('device_info')">
+            <img src="image/qrcode.png" alt=""><span data-i18n="DeviceInfo"></span></a></li>
+        <li><a href="javascript:showPage('upgrade')">
+            <img src="image/update1.png" alt=""><span data-i18n="Update"></span></a></li>
+        <li><a href="javascript:showPage('transfer')">
+            <img src="image/transfer_files.png" alt=""><span data-i18n="TransferFiles"></span></a></li>
+        <li class="first-level-menu has-children">
+            <a href="javascript:toggleSecondUl()">
+                <img src="image/setting.png" alt=""><span data-i18n="Config"></span>
+                <img class="toggle-icon" id="configSecondUlImage" src="image/right.png" alt="">
+            </a>
+            <ul id="second_ul">
+                <li><a href="javascript:showPage('config_base')"><span data-i18n="Base"></span></a></li>
+                <li><a href="javascript:showPage('config_network')"><span data-i18n="Network"></span></a></li>
+                <li><a href="javascript:showPage('config_gpio')"><span data-i18n="Gpio"></span></a></li>
+                <li><a href="javascript:showPage('config_mqtt')"><span data-i18n="Mqtt"></span></a></li>
+                <li><a href="javascript:showPage('config_reader')"><span data-i18n="ReaderMode"></span></a></li>
+                <li><a href="javascript:showPage('config_log')"><span data-i18n="Log"></span></a></li>
+            </ul>
+        </li>
+    </ul>
+    <div class="main" id="pageDiv"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.innerWidth <= 768 && $('checkbox')) {
+        $('checkbox').checked = false;
+    }
+    const lastPage = sessionStorage.getItem('page') || 'inventory';
+    showPage(lastPage);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32-S3 Tag Manager</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+</head>
+<body class="shell">
+
+<!-- Shell copied from the URA4 web UI: collapsible icon sidebar, the page body
+     sits in #pageDiv and is filled by showPage(). -->
+<div class="navbar">
+    <input type="checkbox" id="checkbox" checked>
+    <label for="checkbox"><img src="image/bars.png" alt="menu"></label>
+    <img id="langImage" class="langImg" src="image/lang_en.png" onclick="langChange()" alt="lang">
+    <ul id="menu">
+        <li>
+            <img src="image/uhf.png" alt="">
+            <span>ESP32-S3</span>
+        </li>
+        <li><a href="javascript:showPage('inventory')">
+            <img src="image/inventory.png" alt=""><span data-i18n="Inventory"></span></a></li>
+        <li><a href="javascript:showPage('read_write')">
+            <img src="image/readwrite.png" alt=""><span data-i18n="ReadWrite"></span></a></li>
+        <li><a href="javascript:showPage('lock_kill')">
+            <img src="image/lock.png" alt=""><span data-i18n="LockKill"></span></a></li>
+        <li><a href="javascript:showPage('device_info')">
+            <img src="image/qrcode.png" alt=""><span data-i18n="DeviceInfo"></span></a></li>
+        <li><a href="javascript:showPage('upgrade')">
+            <img src="image/update1.png" alt=""><span data-i18n="Update"></span></a></li>
+        <li><a href="javascript:showPage('transfer')">
+            <img src="image/transfer_files.png" alt=""><span data-i18n="TransferFiles"></span></a></li>
+        <li class="first-level-menu has-children">
+            <a href="javascript:toggleSecondUl()">
+                <img src="image/setting.png" alt=""><span data-i18n="Config"></span>
+                <img class="toggle-icon" id="configSecondUlImage" src="image/right.png" alt="">
+            </a>
+            <ul id="second_ul">
+                <li><a href="javascript:showPage('config_base')"><span data-i18n="Base"></span></a></li>
+                <li><a href="javascript:showPage('config_network')"><span data-i18n="Network"></span></a></li>
+                <li><a href="javascript:showPage('config_gpio')"><span data-i18n="Gpio"></span></a></li>
+                <li><a href="javascript:showPage('config_mqtt')"><span data-i18n="Mqtt"></span></a></li>
+                <li><a href="javascript:showPage('config_reader')"><span data-i18n="ReaderMode"></span></a></li>
+                <li><a href="javascript:showPage('config_log')"><span data-i18n="Log"></span></a></li>
+            </ul>
+        </li>
+    </ul>
+    <div class="main" id="pageDiv"></div>
+</div>
+
+<div id="toast"></div>
+
+
+<script>
+window.addEventListener('load', function () {
+  showPage('config_network');
+  setTimeout(function () {
+    var w = document.querySelector('#pageDiv iframe').contentWindow;
+    var d = w.document;
+    var out = [];
+    w.netGetCurrent();
+    setTimeout(function () {
+      out.push('currentIp=' + d.getElementById('currentIp').value);
+      out.push('gateway=' + d.getElementById('currentGateway').value);
+      out.push('ethernetIp=' + d.getElementById('ethernetIp').value);
+      out.push('wifiOn=' + d.getElementById('wifiOn').checked);
+      out.push('rawData=' + d.getElementById('rawData').value);
+      out.push('toast=' + document.getElementById('toast').textContent);
+      document.title = 'RESULT ' + out.join(' | ');
+    }, 5000);
+  }, 3000);
+});
+</script>
+</body>
+</html>

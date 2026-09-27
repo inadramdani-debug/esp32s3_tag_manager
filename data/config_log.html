@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Log</title>
+</head>
+<body>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="log"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="logDebug">
+        <label for="logDebug" class="style_fieldset_span" data-i18n="debug"></label>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="level"></span>:
+        <select id="logLevel" class="style_fieldset_select" style="width:90px">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="logSet()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="logGet()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    logGet();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/boxmap.js"></script>
+<title>Box Map</title>
+</head>
+<body>
+
+<!-- ── Compact Control Header ────────────────────────────────────────── -->
+<div class="box_compact_panel">
+    <!-- Row 1: Operations Toolbar, Profiles & Database -->
+    <div class="box_compact_row">
+        <!-- Group 1: Actions -->
+        <button class="style_fieldset_div_button btn_action btn_read" id="btnReadCell"
+                onclick="boxReadIntoSel()" data-i18n="readIntoCell"></button>
+        <div class="scan_btn_group">
+            <button class="style_fieldset_div_button btn_action btn_scan" id="btnScanBox"
+                    onclick="boxScanBox()" data-i18n="boxScan"></button>
+            <div class="scan_time_wrap">
+                <input type="number" id="boxScanSec" class="style_input_text"
+                       style="width:38px;height:20px;text-align:center" value="10" min="1" max="120">
+                <span class="style_fieldset_span" style="font-size:10px" data-i18n="second"></span>
+            </div>
+        </div>
+        <button class="style_fieldset_div_button btn_action" id="btnClearCell"
+                onclick="boxClearCell()" data-i18n="boxDeleteCell"></button>
+        <button class="style_fieldset_div_button btn_action btn_danger" id="btnClearMap"
+                onclick="boxClearMap()" data-i18n="boxClearMap"></button>
+        <button class="style_fieldset_div_button btn_action btn_save" id="btnSave"
+                onclick="boxSaveNow()" data-i18n="save"></button>
+
+        <!-- Divider / Group 2: Profiles & Database -->
+        <div style="margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+            <select id="savedMapSelect" class="style_fieldset_select box_profile_select" onchange="boxOnSelectProfile()">
+                <option value="" data-i18n="boxSelectProfile">-- Pilih Peta --</option>
+            </select>
+            <input type="text" id="profileNameInput" class="style_input_text box_name_input"
+                   placeholder="Nama Peta..." maxlength="32">
+            <button class="style_fieldset_div_button btn_db" id="btnSaveProfile"
+                    onclick="boxSaveNamedProfile()" data-i18n="boxSaveProfile"></button>
+            <button class="style_fieldset_div_button btn_db" id="btnLoadProfile"
+                    onclick="boxLoadNamedProfile()" data-i18n="boxLoadProfile"></button>
+            <button class="style_fieldset_div_button btn_db btn_danger_sm" id="btnDeleteProfile"
+                    onclick="boxDeleteNamedProfile()" data-i18n="boxDeleteProfile"></button>
+            <button class="style_fieldset_div_button btn_tool" onclick="boxExportJson()" data-i18n="boxExportJson">JSON</button>
+            <button class="style_fieldset_div_button btn_tool" onclick="boxExportCsv()" data-i18n="boxExportCsv">CSV</button>
+            <button class="style_fieldset_div_button btn_tool" onclick="$('importFileInput').click()" data-i18n="boxImportJson">Impor</button>
+            <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="boxImportJson(event)">
+        </div>
+    </div>
+
+    <!-- Row 2: Selected Cell, EPC Input, Auto-Next, API Actions & Stats -->
+    <div class="box_compact_row" style="margin-top:3px">
+        <div class="cell_badge_wrap">
+            <span class="style_fieldset_span" style="font-size:12px" data-i18n="cell"></span>:
+            <b id="selCell" class="cell_badge">—</b>
+        </div>
+        <input type="text" id="cellEpc" class="style_input_text mono_input cell_epc_input"
+               placeholder="EPC (paste / scan / C5)..." maxlength="64"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();boxSetEpc();}">
+        <button class="style_fieldset_div_button btn_assign"
+                onclick="boxSetEpc()" data-i18n="boxAssignBtn"></button>
+        <label class="c5_auto_wrap" title="Otomatis maju ke sel berikutnya setelah baca / pasang EPC">
+            <input type="checkbox" id="cbAutoNext" checked>
+            <span data-i18n="autoNext">Auto Maju</span>
+        </label>
+        <span class="hint save_indicator" id="saveState"></span>
+
+        <!-- API / JSON Buttons -->
+        <button class="style_fieldset_div_button btn_tool btn_api" id="btnSendApi"
+                onclick="boxSendToApi()" data-i18n="sendApi" title="Kirim data/hasil scan ke REST API Server">Kirim API</button>
+        <button class="style_fieldset_div_button btn_tool" id="btnCopyJson"
+                onclick="boxCopyJson()" data-i18n="copyJson" title="Salin data JSON lengkap ke clipboard">Salin JSON</button>
+        <button class="style_fieldset_div_button btn_tool" id="btnApiConfig"
+                onclick="boxOpenApiModal()" data-i18n="apiConfig" title="Pengaturan URL & Webhook API">⚙️ API</button>
+
+        <!-- Stats on right -->
+        <div class="stat_badge" style="margin-left:auto">
+            <span data-i18n="boxCellsFilled"></span>:
+            <b id="fillCount">0</b> / 96
+            <span id="fillPercent" style="color:#5a738e;font-size:11px;margin-left:2px">(0%)</span>
+        </div>
+        <div class="stat_badge" id="dupWrap" style="display:none">
+            <span data-i18n="boxDup"></span>:
+            <b id="dupCount" style="color:#c9302c">0</b>
+        </div>
+        <button class="style_fieldset_div_button btn_tool" id="btnToggleArchive"
+                onclick="boxToggleArchive()" style="font-size:11px;height:24px" data-i18n="boxArchive"></button>
+    </div>
+
+    <!-- Scan Progress Bar -->
+    <div class="scan_bar_wrap" id="scanBarWrap" style="display:none;margin-top:2px">
+        <div class="scan_bar"><div class="scan_bar_fill" id="scanBarFill"></div></div>
+        <span class="hint" id="scanState" style="font-size:11px"></span>
+    </div>
+</div>
+
+<!-- ── Quick Result Banner (Pass / Fail Indicator) ───────────────────── -->
+<div id="scanResultBanner" class="scan_banner" style="display:none"></div>
+
+<!-- ── Layer Selector Tabs for Mobile / Portrait (Chainway C5) ──────── -->
+<div class="layer_tabs_wrap" id="layerTabs">
+    <button type="button" class="layer_tab active" id="tabLayer0" onclick="boxSetLayerFilter(0)" data-i18n="allLayers">Semua Layer (96)</button>
+    <button type="button" class="layer_tab" id="tabLayer1" onclick="boxSetLayerFilter(1)" data-i18n="layer1Tab">Layer 1 (32)</button>
+    <button type="button" class="layer_tab" id="tabLayer2" onclick="boxSetLayerFilter(2)" data-i18n="layer2Tab">Layer 2 (32)</button>
+    <button type="button" class="layer_tab" id="tabLayer3" onclick="boxSetLayerFilter(3)" data-i18n="layer3Tab">Layer 3 (32)</button>
+</div>
+
+<!-- ── The Grid: 3 Layers (Responsive for Desktop & Portrait C5) ──────── -->
+<div id="gridArea" class="grid_3col"></div>
+
+<!-- ── Collapsible Results & Archive Area ─────────────────────────────── -->
+<div class="box_results_panel">
+    <fieldset class="style_fieldset" id="missingBox" style="display:none">
+        <legend>
+            <span data-i18n="boxMissing"></span> (<b id="missingCount">0</b>)
+        </legend>
+        <div class="tag_table_wrap">
+            <table class="tag_table">
+                <thead>
+                    <tr>
+                        <th data-i18n="layer"></th>
+                        <th data-i18n="row"></th>
+                        <th data-i18n="col"></th>
+                        <th data-i18n="epc"></th>
+                    </tr>
+                </thead>
+                <tbody id="missingBody"></tbody>
+            </table>
+        </div>
+    </fieldset>
+
+    <fieldset class="style_fieldset" id="unexpectedBox" style="display:none">
+        <legend>
+            <span data-i18n="boxUnexpected"></span> (<b id="unexpectedCount">0</b>)
+        </legend>
+        <div class="tag_table_wrap">
+            <table class="tag_table">
+                <thead>
+                    <tr>
+                        <th data-i18n="epc"></th>
+                        <th data-i18n="rssi"></th>
+                        <th data-i18n="antenna"></th>
+                        <th data-i18n="count"></th>
+                    </tr>
+                </thead>
+                <tbody id="unexpectedBody"></tbody>
+            </table>
+        </div>
+    </fieldset>
+
+    <fieldset class="style_fieldset" id="archiveBox" style="display:none">
+        <legend>
+            <span data-i18n="boxArchive"></span> (<b id="archiveCount">0</b>)
+        </legend>
+        <div style="width:100%">
+            <span class="hint" data-i18n="boxArchiveHint"></span>
+            <button class="style_fieldset_div_button" style="width:auto;padding:0 8px;height:24px;font-size:11px"
+                    onclick="boxClearArchive()" data-i18n="boxArchiveClear"></button>
+        </div>
+        <div class="tag_table_wrap">
+            <table class="tag_table">
+                <thead>
+                    <tr>
+                        <th data-i18n="cell"></th>
+                        <th data-i18n="epc"></th>
+                        <th data-i18n="boxWhen"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="archiveBody"></tbody>
+            </table>
+        </div>
+    </fieldset>
+</div>
+
+<!-- ── API / Webhook Configuration Modal ──────────────────────────────── -->
+<div id="apiConfigModal" class="modal_overlay" style="display:none">
+    <div class="modal_card">
+        <div class="modal_header">
+            <span class="modal_title" data-i18n="apiConfig">Konfigurasi REST API / Webhook</span>
+            <button type="button" class="modal_close" onclick="boxCloseApiModal()">&times;</button>
+        </div>
+        <div class="modal_row">
+            <label data-i18n="apiUrl">URL Endpoint API / Webhook (HTTP POST/PUT):</label>
+            <input type="url" id="apiUrlInput" class="modal_input" placeholder="http://192.168.1.50:5000/api/carton_scan">
+        </div>
+        <div class="modal_row" style="flex-direction:row;gap:10px">
+            <div style="flex:1">
+                <label data-i18n="apiMethod">Metode:</label>
+                <select id="apiMethodSelect" class="modal_input">
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                </select>
+            </div>
+            <div style="flex:2">
+                <label data-i18n="apiAuth">Header Authorization (Opsional):</label>
+                <input type="text" id="apiAuthInput" class="modal_input" placeholder="Bearer secret_token_here">
+            </div>
+        </div>
+        <div class="modal_row" style="margin-top:6px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:normal;font-size:12px">
+                <input type="checkbox" id="apiAutoSendCb">
+                <span data-i18n="apiAutoSend">Otomatis kirim ke API setelah pemindaian dus</span>
+            </label>
+        </div>
+        <div class="modal_actions">
+            <button type="button" class="style_fieldset_div_button btn_tool btn_api" onclick="boxSendToApi()" data-i18n="testApi">Tes Kirim</button>
+            <button type="button" class="style_fieldset_div_button btn_db" onclick="boxSaveApiSettings()" data-i18n="save">Simpan</button>
+            <button type="button" class="style_fieldset_div_button btn_tool" onclick="boxCloseApiModal()" data-i18n="cancel">Batal</button>
+        </div>
+    </div>
+</div>
+
+<script>window.addEventListener('DOMContentLoaded', () => { i18n(); boxInit(); });</script>
+</body>
+</html>

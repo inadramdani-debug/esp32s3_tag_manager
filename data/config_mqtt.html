@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>MQTT</title>
+</head>
+<body>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="normalConfig"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="mqttEnable">
+        <label for="mqttEnable" class="style_fieldset_span" data-i18n="mqttEnable"></label>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="normalConfigEnable">
+        <label for="normalConfigEnable" class="style_fieldset_span" data-i18n="normalEnable"></label>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="hostName"></span>:
+        <input type="text" id="mqttHostName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="clientId"></span>:
+        <input type="text" id="mqttClientId" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="userName"></span>:
+        <input type="text" id="mqttUserName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="userPsw"></span>:
+        <input type="password" id="mqttPsw" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="port"></span>:
+        <input type="number" id="mqttPort" class="style_input_text" style="width:100px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="tagEventTopic"></span>:
+        <input type="text" id="mqttTagEventTopic" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="heartbeatTopic"></span>:
+        <input type="text" id="mqttHeartbeatTopic" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="mqttSetNormal()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="mqttGet()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="iot"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <input type="checkbox" id="iotEnable">
+        <label for="iotEnable" class="style_fieldset_span" data-i18n="iotEnableLabel"></label>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="hostName"></span>:
+        <input type="text" id="iotHostName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="topics"></span>:
+        <input type="text" id="iotTopics" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="clientId"></span>:
+        <input type="text" id="iotClientId" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="userName"></span>:
+        <input type="text" id="iotUserName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="userPsw"></span>:
+        <input type="password" id="iotPsw" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="port"></span>:
+        <input type="number" id="iotPort" class="style_input_text" style="width:100px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="productKey"></span>:
+        <input type="text" id="iotProductKey" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="productSecret"></span>:
+        <input type="text" id="iotProductSecret" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="deviceName"></span>:
+        <input type="text" id="iotDeviceName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="deviceSecret"></span>:
+        <input type="text" id="iotDeviceSecret" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="mqttSetIot()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="mqttGet()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    mqttGet();
+});
+</script>
+</body>
+</html>

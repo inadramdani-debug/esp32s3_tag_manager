@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<title>Reader Mode</title>
+</head>
+<body>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="readerMode"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="readerRole"></span>:
+        <select id="readerRole" class="style_fieldset_select" style="width:150px">
+            <option value="server">server</option>
+            <option value="client">client</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="protocol"></span>:
+        <select id="protocol" class="style_fieldset_select" style="width:150px">
+            <option value="tcp">tcp</option>
+            <option value="http">http</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="hostName"></span>:
+        <input type="text" id="serviceHostName" class="style_input_text" style="width:150px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="port"></span>:
+        <input type="number" id="servicePort" class="style_input_text" style="width:100px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="dataType"></span>:
+        <select id="dataType" class="style_fieldset_select" style="width:150px">
+            <option value="json">json</option>
+            <option value="hex">hex</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="triggerInventoryMode"></span>:
+        <select id="triggerMode" class="style_fieldset_select" style="width:170px">
+            <option value="autoMode">autoMode</option>
+            <option value="gpiTriggerMode">gpiTriggerMode</option>
+            <option value="commandMode">commandMode</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="rmSet()" data-i18n="set"></button>
+        <button class="style_fieldset_div_button" onclick="rmGet()" data-i18n="get"></button>
+    </div>
+</fieldset>
+
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    i18n();
+    rmGet();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/app.js"></script>
+<script src="js/reader.js"></script>
+<script src="js/readwrite.js"></script>
+<title>Read-Write</title>
+</head>
+<body>
+
+<!-- Optional select-by-filter, same control as the reader's own page. -->
+<div class="inv_filter_toggle">
+    <input type="checkbox" id="cbFilter">
+    <label for="cbFilter" class="style_fieldset_span" data-i18n="filter"></label>
+</div>
+
+<fieldset class="style_fieldset" id="fieldsetFilter" style="display:none">
+    <legend data-i18n="filter"></legend>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterBank"></span>:
+        <select id="select_filterBank" class="style_fieldset_select" style="width:100px">
+            <option value="epc">epc</option>
+            <option value="tid">tid</option>
+            <option value="user">user</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterOffset"></span>:
+        <input type="number" id="filterOffset" value="32" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span">bit</span>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="filterLength"></span>:
+        <input type="number" id="filterLength" value="96" class="style_input_text" style="width:70px">
+        <span class="style_fieldset_span">bit</span>
+        <span class="hint">(auto from Filter Data)</span>
+    </div>
+    <div class="style_fieldset_div">
+        <span class="style_fieldset_span" data-i18n="filterData"></span>:
+        <input type="text" id="filterData" class="style_input_text mono_input"
+               style="width:330px" maxlength="64">
+    </div>
+</fieldset>
+
+<fieldset class="style_fieldset">
+    <legend data-i18n="parameter"></legend>
+
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="rwBank"></span>:
+        <select id="rwBank" class="style_fieldset_select" style="width:110px">
+            <option value="epc">epc</option>
+            <option value="tid">tid</option>
+            <option value="user">user</option>
+            <option value="reserve">reserve</option>
+        </select>
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="rwOffset"></span>:
+        <input type="number" id="rwOffset" value="2" class="style_input_text" style="width:70px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="rwLength"></span>:
+        <input type="number" id="rwLength" value="6" class="style_input_text" style="width:70px">
+    </div>
+    <div class="style_fieldset_div_nowrap">
+        <span class="style_fieldset_span" data-i18n="rwPassword"></span>:
+        <input type="text" id="rwPassword" value="00000000"
+               class="style_input_text mono_input" style="width:120px" maxlength="8">
+    </div>
+
+    <div style="width:100%">
+        <span class="style_fieldset_span" data-i18n="rwData"></span>:
+        <textarea id="rwData" class="rw_textarea mono_input"></textarea>
+    </div>
+
+    <!-- Write is deliberately the second button and asks for confirmation:
+         it overwrites what is physically on the tag. -->
+    <div class="style_fieldset_div_wrap button_row">
+        <button class="style_fieldset_div_button" onclick="rwRead()" data-i18n="read"></button>
+        <button class="style_fieldset_div_button" onclick="rwWrite()" data-i18n="write"></button>
+    </div>
+</fieldset>
+
+<script>window.addEventListener('DOMContentLoaded', rwInit);</script>
+</body>
+</html>
