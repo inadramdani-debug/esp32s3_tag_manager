@@ -35,16 +35,60 @@ let raceDeadZoneSettings = {
     preRaceLock: true // Kunci Pra-Lomba: Tolak / abaikan tag pelari jika wave belum start
 };
 
-// Dual Reader Configuration (1x 8-Port + 1x 4-Port = 12 Port Total)
-const DEFAULT_DUALREADER_CONFIG = {
-    enabled: false,
-    reader2Ip: 'http://192.168.1.117',
-    reader1Ports: 8,
-    reader2Ports: 4
+// ── Multi-Reader & Antena Configuration (1, 2, 3, atau Lebih Reader) ───────
+const RACE_MULTIREADER_KEY = 'race_multireader_config_v2';
+const DEFAULT_MULTI_READER_CONFIG = {
+    readers: [
+        {
+            id: 'R1',
+            name: 'Reader 1 (Host ESP32)',
+            ip: 'direct',
+            isHost: true,
+            enabled: true,
+            portCount: 8,
+            ports: [
+                { port: 1, name: 'Ant-1 (Mat Jalur 1)', enabled: true, role: 'AUTO', power: 30 },
+                { port: 2, name: 'Ant-2 (Mat Jalur 2)', enabled: true, role: 'AUTO', power: 30 },
+                { port: 3, name: 'Ant-3 (Mat Jalur 3)', enabled: true, role: 'AUTO', power: 30 },
+                { port: 4, name: 'Ant-4 (Mat Jalur 4)', enabled: true, role: 'AUTO', power: 30 },
+                { port: 5, name: 'Ant-5 (Overhead 1)',  enabled: true, role: 'AUTO', power: 30 },
+                { port: 6, name: 'Ant-6 (Overhead 2)',  enabled: true, role: 'AUTO', power: 30 },
+                { port: 7, name: 'Ant-7 (Side Ant 1)',  enabled: true, role: 'AUTO', power: 30 },
+                { port: 8, name: 'Ant-8 (Side Ant 2)',  enabled: true, role: 'AUTO', power: 30 }
+            ]
+        },
+        {
+            id: 'R2',
+            name: 'Reader 2 (Start Gate Kanan)',
+            ip: 'http://192.168.1.117',
+            isHost: false,
+            enabled: false,
+            portCount: 4,
+            ports: [
+                { port: 1, name: 'R2-Ant-1 (Mat 1)', enabled: true, role: 'START', power: 30 },
+                { port: 2, name: 'R2-Ant-2 (Mat 2)', enabled: true, role: 'START', power: 30 },
+                { port: 3, name: 'R2-Ant-3 (Mat 3)', enabled: true, role: 'START', power: 30 },
+                { port: 4, name: 'R2-Ant-4 (Mat 4)', enabled: true, role: 'START', power: 30 }
+            ]
+        },
+        {
+            id: 'R3',
+            name: 'Reader 3 (Finish Gate Kiri)',
+            ip: 'http://192.168.1.118',
+            isHost: false,
+            enabled: false,
+            portCount: 4,
+            ports: [
+                { port: 1, name: 'R3-Ant-1 (Mat 1)', enabled: true, role: 'FINISH', power: 30 },
+                { port: 2, name: 'R3-Ant-2 (Mat 2)', enabled: true, role: 'FINISH', power: 30 },
+                { port: 3, name: 'R3-Ant-3 (Mat 3)', enabled: true, role: 'FINISH', power: 30 },
+                { port: 4, name: 'R3-Ant-4 (Mat 4)', enabled: true, role: 'FINISH', power: 30 }
+            ]
+        }
+    ]
 };
-let dualReaderConfig = { ...DEFAULT_DUALREADER_CONFIG };
-let reader1Online = true;
-let reader2Online = false;
+let multiReaderConfig = JSON.parse(JSON.stringify(DEFAULT_MULTI_READER_CONFIG));
+let readerOnlineStatusMap = { R1: true };
 
 // Wave Gun Starts per Category & Gate Mode State
 let gateMode = 'auto'; // 'auto' | 'start' | 'finish' | 'split'
@@ -425,56 +469,262 @@ function raceApplyDeadZonePreset(type) {
 }
 
 // ---------------------------------------------------------------------------
-// Dual Reader (8-Port + 4-Port = 12 Antena) Management
+// Multi-Reader & Antena Configuration (1, 2, 3, atau Lebih Reader)
 // ---------------------------------------------------------------------------
-function raceLoadDualReaderConfig() {
+function raceLoadMultiReaderConfig() {
     try {
-        const raw = localStorage.getItem(RACE_DUALREADER_KEY);
-        if (raw) dualReaderConfig = Object.assign({}, DEFAULT_DUALREADER_CONFIG, JSON.parse(raw));
+        const raw = localStorage.getItem(RACE_MULTIREADER_KEY);
+        if (raw) {
+            multiReaderConfig = Object.assign({}, DEFAULT_MULTI_READER_CONFIG, JSON.parse(raw));
+        } else {
+            // Auto migrate old dualReaderConfig if present
+            const oldDual = localStorage.getItem('race_dualreader_config_v1');
+            if (oldDual) {
+                const parsed = JSON.parse(oldDual);
+                multiReaderConfig = JSON.parse(JSON.stringify(DEFAULT_MULTI_READER_CONFIG));
+                if (multiReaderConfig.readers && multiReaderConfig.readers[1]) {
+                    multiReaderConfig.readers[1].enabled = !!parsed.enabled;
+                    if (parsed.reader2Ip) multiReaderConfig.readers[1].ip = parsed.reader2Ip;
+                }
+            } else {
+                multiReaderConfig = JSON.parse(JSON.stringify(DEFAULT_MULTI_READER_CONFIG));
+            }
+        }
     } catch (e) {
-        dualReaderConfig = { ...DEFAULT_DUALREADER_CONFIG };
+        multiReaderConfig = JSON.parse(JSON.stringify(DEFAULT_MULTI_READER_CONFIG));
     }
     raceUpdateReaderStatusBadges();
 }
 
-function raceSaveDualReaderConfig() {
+function raceSaveMultiReaderConfig() {
     try {
-        localStorage.setItem(RACE_DUALREADER_KEY, JSON.stringify(dualReaderConfig));
+        localStorage.setItem(RACE_MULTIREADER_KEY, JSON.stringify(multiReaderConfig));
     } catch (e) {}
     raceUpdateReaderStatusBadges();
 }
 
-function raceToggleDualReaderDrawer() {
-    const el = $('dualReaderDrawer');
-    if (!el) return;
-    const isOpen = el.style.display !== 'none';
-    el.style.display = isOpen ? 'none' : '';
-    if (!isOpen) raceRenderDualReaderDrawer();
-}
+function raceRenderMultiReaderCards(containerId = 'multiReaderContainer') {
+    const container = $(containerId);
+    if (!container) return;
 
-function raceRenderDualReaderDrawer() {
-    if ($('chkEnableReader2')) $('chkEnableReader2').checked = !!dualReaderConfig.enabled;
-    if ($('reader2IpInput')) $('reader2IpInput').value = dualReaderConfig.reader2Ip || 'http://192.168.1.117';
-    raceUpdateReaderStatusBadges();
-}
-
-function raceOnToggleReader2Checkbox(checked) {
-    dualReaderConfig.enabled = !!checked;
-    raceSaveDualReaderConfig();
-    raceUpdateReaderStatusBadges();
-}
-
-function raceSaveDualReaderFromDrawer() {
-    if ($('chkEnableReader2')) dualReaderConfig.enabled = $('chkEnableReader2').checked;
-    if ($('reader2IpInput')) {
-        let ip = $('reader2IpInput').value.trim();
-        if (ip && !ip.startsWith('http://') && !ip.startsWith('https://')) {
-            ip = 'http://' + ip;
+    let globalPortCounter = 1;
+    const html = (multiReaderConfig.readers || []).map((r, rIdx) => {
+        const isHost = !!r.isHost;
+        const statusKey = r.id;
+        const isOnline = readerOnlineStatusMap[statusKey];
+        let statusBadge = '';
+        if (!r.enabled) {
+            statusBadge = '<span class="reader_badge disabled">⚪ Nonaktif</span>';
+        } else if (raceState === 'RUNNING' && racePollActive) {
+            statusBadge = '<span class="reader_badge polling">🟢 Polling Live</span>';
+        } else if (isHost || isOnline) {
+            statusBadge = '<span class="reader_badge online">🟢 Online / Siap</span>';
+        } else {
+            statusBadge = '<span class="reader_badge" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">🟡 Siap (Belum Ping)</span>';
         }
-        dualReaderConfig.reader2Ip = ip;
+
+        const portsHtml = (r.ports || []).map((p, pIdx) => {
+            const currentGlobalPort = globalPortCounter++;
+            return `
+                <tr>
+                    <td style="text-align:center;font-weight:bold;color:#0f172a">Port ${p.port}</td>
+                    <td style="text-align:center;font-family:Consolas,monospace;font-size:11px;color:#64748b">Port ${currentGlobalPort}</td>
+                    <td>
+                        <input type="text" class="style_input_text font_bold" style="height:26px;font-size:11.5px;color:#0f172a"
+                               value="${p.name || (r.id + '-Ant-' + p.port)}"
+                               placeholder="Nama / ID Antena..."
+                               onchange="raceUpdateAntennaField('${r.id}', ${p.port}, 'name', this.value)">
+                    </td>
+                    <td style="text-align:center">
+                        <select class="style_fieldset_select font_bold" style="height:26px;font-size:11px;padding:0 6px"
+                                onchange="raceUpdateAntennaField('${r.id}', ${p.port}, 'role', this.value)">
+                            <option value="AUTO" ${p.role === 'AUTO' ? 'selected' : ''}>🔄 Auto (Start & Finish)</option>
+                            <option value="START" ${p.role === 'START' ? 'selected' : ''}>🟢 Garis Start Saja</option>
+                            <option value="FINISH" ${p.role === 'FINISH' ? 'selected' : ''}>🏁 Garis Finish Saja</option>
+                            <option value="SPLIT" ${p.role === 'SPLIT' ? 'selected' : ''}>⏱️ Checkpoint / Split</option>
+                        </select>
+                    </td>
+                    <td style="text-align:center">
+                        <input type="checkbox" ${p.enabled !== false ? 'checked' : ''}
+                               onchange="raceUpdateAntennaField('${r.id}', ${p.port}, 'enabled', this.checked)">
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        return `
+            <div class="style_fieldset" style="margin-bottom:12px;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+                <!-- Reader Card Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;padding-bottom:8px;border-bottom:1px solid #f1f5f9">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <span class="mono font_bold" style="background:#0284c7;color:#ffffff;padding:3px 8px;border-radius:4px;font-size:12px">${r.id}</span>
+                        <input type="text" class="style_input_text font_bold" style="width:230px;height:28px;font-size:12.5px;color:#0f172a"
+                               value="${r.name}" placeholder="Nama Reader..."
+                               onchange="raceUpdateReaderField('${r.id}', 'name', this.value)">
+                        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:bold;cursor:pointer;color:#0f172a">
+                            <input type="checkbox" ${r.enabled ? 'checked' : ''}
+                                   onchange="raceUpdateReaderField('${r.id}', 'enabled', this.checked)">
+                            <span>Aktif</span>
+                        </label>
+                        ${statusBadge}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <button type="button" class="style_fieldset_div_button btn_tool" style="height:26px;font-size:11px;padding:0 8px"
+                                onclick="raceTestSingleReaderConnection('${r.id}')">
+                            ⚡ Ping / Tes
+                        </button>
+                        ${!isHost ? `
+                            <button type="button" class="style_fieldset_div_button btn_tool btn_danger_sm" style="height:26px;font-size:11px;padding:0 8px"
+                                    onclick="raceRemoveReader('${r.id}')" title="Hapus Reader ini">
+                                🗑️ Hapus
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Connection & Port Count Settings Row -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;margin-bottom:10px;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:12px">
+                    <div>
+                        <span style="color:#64748b;font-weight:600">Koneksi / IP URL:</span><br>
+                        ${isHost ? `
+                            <span class="mono font_bold" style="color:#059669;display:inline-block;margin-top:4px">Direct Internal Reader (Host ESP32)</span>
+                        ` : `
+                            <input type="text" class="style_input_text mono" style="width:100%;height:26px;margin-top:2px"
+                                   value="${r.ip || 'http://192.168.1.117'}" placeholder="http://192.168.1.117"
+                                   onchange="raceUpdateReaderField('${r.id}', 'ip', this.value)">
+                        `}
+                    </div>
+                    <div>
+                        <span style="color:#64748b;font-weight:600">Jumlah Port Antena Fisik:</span><br>
+                        <select class="style_fieldset_select" style="width:100%;height:26px;margin-top:2px"
+                                onchange="raceUpdateReaderPortCount('${r.id}', parseInt(this.value))">
+                            <option value="1" ${r.portCount === 1 ? 'selected' : ''}>1 Port Antena</option>
+                            <option value="2" ${r.portCount === 2 ? 'selected' : ''}>2 Port Antena</option>
+                            <option value="4" ${r.portCount === 4 ? 'selected' : ''}>4 Port Antena</option>
+                            <option value="8" ${r.portCount === 8 ? 'selected' : ''}>8 Port Antena</option>
+                            <option value="16" ${r.portCount === 16 ? 'selected' : ''}>16 Port Antena</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Antenna Port Table -->
+                <div class="tag_table_wrap" style="margin-top:6px">
+                    <table class="tag_table" style="font-size:11.5px">
+                        <thead>
+                            <tr>
+                                <th style="width:75px">Port Lokal</th>
+                                <th style="width:85px">Global Port</th>
+                                <th>Nama / ID Port Antena (Matras / Gate)</th>
+                                <th style="width:170px">Fungsi Timing (Role)</th>
+                                <th style="width:65px">Aktif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${portsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+function raceAddReader() {
+    const existingIds = (multiReaderConfig.readers || []).map(r => r.id);
+    let nextNum = existingIds.length + 1;
+    let newId = 'R' + nextNum;
+    while (existingIds.includes(newId)) {
+        nextNum++;
+        newId = 'R' + nextNum;
     }
-    raceSaveDualReaderConfig();
-    toast('✅ Konfigurasi Reader RFID berhasil disimpan!');
+
+    const defaultIp = `http://192.168.1.${115 + nextNum}`;
+    const newReader = {
+        id: newId,
+        name: `Reader ${nextNum} (Secondary Reader)`,
+        ip: defaultIp,
+        isHost: false,
+        enabled: true,
+        portCount: 4,
+        ports: [
+            { port: 1, name: `${newId}-Ant-1`, enabled: true, role: 'AUTO', power: 30 },
+            { port: 2, name: `${newId}-Ant-2`, enabled: true, role: 'AUTO', power: 30 },
+            { port: 3, name: `${newId}-Ant-3`, enabled: true, role: 'AUTO', power: 30 },
+            { port: 4, name: `${newId}-Ant-4`, enabled: true, role: 'AUTO', power: 30 }
+        ]
+    };
+
+    multiReaderConfig.readers.push(newReader);
+    raceSaveMultiReaderConfig();
+    raceRenderMultiReaderCards();
+    if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+    toast(`➕ Reader baru [${newId}] berhasil ditambahkan!`, 3500);
+}
+
+function raceRemoveReader(readerId) {
+    const idx = (multiReaderConfig.readers || []).findIndex(x => x.id === readerId);
+    if (idx === -1) return;
+    if (multiReaderConfig.readers[idx].isHost) {
+        toast('⚠️ Reader Host (ESP32 Utama) tidak boleh dihapus!');
+        return;
+    }
+    const name = multiReaderConfig.readers[idx].name;
+    multiReaderConfig.readers.splice(idx, 1);
+    raceSaveMultiReaderConfig();
+    raceRenderMultiReaderCards();
+    if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+    toast(`🗑️ Reader [${readerId}] ${name} berhasil dihapus.`);
+}
+
+function raceUpdateReaderField(readerId, field, val) {
+    const r = (multiReaderConfig.readers || []).find(x => x.id === readerId);
+    if (!r) return;
+    if (field === 'ip') {
+        let clean = (val || '').trim();
+        if (clean && !clean.startsWith('http://') && !clean.startsWith('https://')) {
+            clean = 'http://' + clean;
+        }
+        r.ip = clean;
+    } else {
+        r[field] = val;
+    }
+    raceSaveMultiReaderConfig();
+    raceRenderMultiReaderCards();
+    if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+}
+
+function raceUpdateReaderPortCount(readerId, newCount) {
+    const r = (multiReaderConfig.readers || []).find(x => x.id === readerId);
+    if (!r) return;
+    r.portCount = newCount;
+    r.ports = r.ports || [];
+    if (r.ports.length < newCount) {
+        for (let i = r.ports.length + 1; i <= newCount; i++) {
+            r.ports.push({
+                port: i,
+                name: `${r.id}-Ant-${i}`,
+                enabled: true,
+                role: 'AUTO',
+                power: 30
+            });
+        }
+    } else if (r.ports.length > newCount) {
+        r.ports = r.ports.slice(0, newCount);
+    }
+    raceSaveMultiReaderConfig();
+    raceRenderMultiReaderCards();
+    if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+}
+
+function raceUpdateAntennaField(readerId, portNum, field, val) {
+    const r = (multiReaderConfig.readers || []).find(x => x.id === readerId);
+    if (!r || !r.ports) return;
+    const p = r.ports.find(x => x.port === portNum);
+    if (!p) return;
+    p[field] = val;
+    raceSaveMultiReaderConfig();
 }
 
 function raceTimeoutSignal(ms) {
@@ -486,13 +736,22 @@ function raceTimeoutSignal(ms) {
     return undefined;
 }
 
-async function raceTestReader2Connection() {
-    const input = $('reader2IpInput');
-    let url = (input ? input.value : dualReaderConfig.reader2Ip) || 'http://192.168.1.117';
+async function raceTestSingleReaderConnection(readerId) {
+    const r = (multiReaderConfig.readers || []).find(x => x.id === readerId);
+    if (!r) return;
+    if (r.isHost || r.ip === 'direct') {
+        toast(`✅ Reader 1 (Host ESP32): Direct Internal Reader Aktif & Terhubung.`, 3000);
+        readerOnlineStatusMap[r.id] = true;
+        raceRenderMultiReaderCards();
+        if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+        return;
+    }
+
+    let url = (r.ip || '').trim();
     if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
     url = url.replace(/\/+$/, '');
 
-    toast(`⚡ Menghubungi Reader 2 di ${url}...`);
+    toast(`⚡ Menghubungi [${r.id}] ${r.name} di ${url}...`);
     try {
         const t0 = performance.now();
         const resp = await fetch(`${url}/InventoryController/tagReportingDataAndIndex`, {
@@ -503,17 +762,62 @@ async function raceTestReader2Connection() {
         });
         const elapsed = Math.round(performance.now() - t0);
         if (resp.ok) {
-            reader2Online = true;
-            raceUpdateReaderStatusBadges();
-            toast(`✅ Koneksi Reader 2 BERHASIL! (${elapsed}ms) - 4 Port Antena Siap.`, 4000);
+            readerOnlineStatusMap[r.id] = true;
+            toast(`✅ Koneksi [${r.id}] ${r.name} BERHASIL! (${elapsed}ms) - ${r.portCount} Port Antena Siap.`, 4000);
         } else {
             throw new Error(`HTTP ${resp.status}`);
         }
     } catch (e) {
-        reader2Online = false;
-        raceUpdateReaderStatusBadges();
-        toast(`❌ Gagal terhubung ke Reader 2 di ${url}: ${e.message || 'Timeout / Offline'}. Pastikan IP benar & terhubung ke Wi-Fi yang sama.`, 5000);
+        readerOnlineStatusMap[r.id] = false;
+        toast(`❌ Gagal terhubung ke [${r.id}] di ${url}: ${e.message || 'Timeout / Offline'}. Pastikan IP benar & terhubung ke Wi-Fi/LAN yang sama.`, 5000);
     }
+    raceRenderMultiReaderCards();
+    if ($('configMultiReaderContainer')) raceRenderMultiReaderCards('configMultiReaderContainer');
+}
+
+async function raceTestAllReadersConnection() {
+    toast('⚡ Menguji koneksi ke semua reader aktif...');
+    for (let r of (multiReaderConfig.readers || [])) {
+        if (r.enabled) {
+            await raceTestSingleReaderConnection(r.id);
+        }
+    }
+}
+
+function raceGetAntennaInfo(readerIdOrIndex, localOrGlobalPort) {
+    let r = null;
+    if (typeof readerIdOrIndex === 'string') {
+        r = (multiReaderConfig.readers || []).find(x => x.id === readerIdOrIndex);
+    } else if (typeof readerIdOrIndex === 'number') {
+        r = (multiReaderConfig.readers || [])[readerIdOrIndex - 1];
+    }
+    if (!r && (multiReaderConfig.readers || []).length) {
+        r = multiReaderConfig.readers[0];
+    }
+
+    const portNum = Number(localOrGlobalPort) || 1;
+    let portObj = null;
+    if (r && r.ports) {
+        portObj = r.ports.find(p => p.port === portNum) || r.ports[portNum - 1];
+    }
+
+    const readerId = r ? r.id : 'R1';
+    const readerName = r ? r.name : 'Reader 1 (Host ESP32)';
+    const customPortName = portObj ? portObj.name : `Ant-${portNum}`;
+    const portRole = portObj ? (portObj.role || 'AUTO') : 'AUTO';
+    const readerPortLabel = `${readerId}-P${portNum}`;
+    const antennaName = `Port ${portNum}: ${customPortName}`;
+
+    return {
+        readerId,
+        readerName,
+        portNum,
+        portName: customPortName,
+        role: portRole,
+        readerPortLabel,
+        antennaName,
+        hubName: `[${readerId}] ${readerName}`
+    };
 }
 
 function raceUpdateReaderStatusBadges() {
@@ -523,47 +827,28 @@ function raceUpdateReaderStatusBadges() {
     const d2 = $('r2DetailStatus');
 
     if (b1) {
-        if (raceState === 'RUNNING') {
+        if (raceState === 'RUNNING' && racePollActive) {
             b1.className = 'reader_badge polling';
-            b1.textContent = 'R1 (8P): 🟢 Polling';
+            b1.textContent = 'R1 (Host): 🟢 Polling';
         } else {
             b1.className = 'reader_badge online';
-            b1.textContent = 'R1 (8P): 🟢 Host ESP32';
+            b1.textContent = 'R1 (Host): 🟢 Online';
         }
     }
-    if (d1) {
-        d1.textContent = (raceState === 'RUNNING') ? 'Aktif (Sedang Polling)' : 'Siap / Terhubung';
-        d1.style.color = '#059669';
-    }
-
-    if (b2) {
-        if (!dualReaderConfig.enabled) {
+    if (b2 && multiReaderConfig.readers && multiReaderConfig.readers[1]) {
+        const r2 = multiReaderConfig.readers[1];
+        if (!r2.enabled) {
             b2.className = 'reader_badge disabled';
-            b2.textContent = 'R2 (4P): ⚪ Nonaktif';
-        } else if (raceState === 'RUNNING') {
+            b2.textContent = `${r2.id}: ⚪ Nonaktif`;
+        } else if (raceState === 'RUNNING' && racePollActive) {
             b2.className = 'reader_badge polling';
-            b2.textContent = 'R2 (4P): 🟢 Polling';
-        } else if (reader2Online) {
+            b2.textContent = `${r2.id}: 🟢 Polling`;
+        } else if (readerOnlineStatusMap[r2.id]) {
             b2.className = 'reader_badge online';
-            b2.textContent = 'R2 (4P): 🟢 Online';
+            b2.textContent = `${r2.id}: 🟢 Online`;
         } else {
             b2.className = 'reader_badge';
-            b2.textContent = 'R2 (4P): 🟡 Siap';
-        }
-    }
-    if (d2) {
-        if (!dualReaderConfig.enabled) {
-            d2.textContent = 'Nonaktif';
-            d2.style.color = '#64748b';
-        } else if (raceState === 'RUNNING') {
-            d2.textContent = 'Aktif (Sedang Polling)';
-            d2.style.color = '#0284c7';
-        } else if (reader2Online) {
-            d2.textContent = 'Online / Terhubung';
-            d2.style.color = '#059669';
-        } else {
-            d2.textContent = 'Siap (Belum Di-Ping)';
-            d2.style.color = '#d97706';
+            b2.textContent = `${r2.id}: 🟡 Siap`;
         }
     }
 }
@@ -1218,97 +1503,112 @@ function raceUpdateControls() {
 }
 
 // ---------------------------------------------------------------------------
-// Reader RFID Ingest & Timing Matching (Dual Reader Support: 8P + 4P = 12P)
+// Multi-Reader RFID Ingest & Timing Matching (Multi-Reader Concurrent Polling)
 // ---------------------------------------------------------------------------
 async function raceStartReaderPolling() {
     racePollActive = true;
     raceUpdateReaderStatusBadges();
 
-    // 1. Initialize Reader 1 (8-Port Local)
-    try {
-        await reader('/InventoryController/clearCacheTagAndIndex', {}, 6000);
-        await reader('/InventoryController/startInventoryRequest', {
-            type: 'Reader-startInventoryRequest',
-            backgroundInventory: false,
-            tagFilter: { tagMemoryBank: 'epc', bitOffset: 0, bitLength: 0, hexMask: null }
-        }, 8000);
-        reader1Online = true;
-    } catch (e) {
-        reader1Online = false;
-    }
-
-    // 2. Initialize Reader 2 if enabled (4-Port)
-    if (dualReaderConfig.enabled && dualReaderConfig.reader2Ip) {
-        let cleanIp = dualReaderConfig.reader2Ip.replace(/\/+$/, '');
-        if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
-        try {
-            await fetch(`${cleanIp}/InventoryController/clearCacheTagAndIndex`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}),
-                signal: raceTimeoutSignal(3000)
-            });
-            await fetch(`${cleanIp}/InventoryController/startInventoryRequest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+    // 1. Initialize all active readers in multiReaderConfig
+    for (let r of (multiReaderConfig.readers || [])) {
+        if (!r.enabled) continue;
+        if (r.isHost || r.ip === 'direct') {
+            try {
+                await reader('/InventoryController/clearCacheTagAndIndex', {}, 6000);
+                await reader('/InventoryController/startInventoryRequest', {
                     type: 'Reader-startInventoryRequest',
                     backgroundInventory: false,
                     tagFilter: { tagMemoryBank: 'epc', bitOffset: 0, bitLength: 0, hexMask: null }
-                }),
-                signal: raceTimeoutSignal(3000)
-            });
-            reader2Online = true;
-        } catch (e) {
-            reader2Online = false;
+                }, 8000);
+                readerOnlineStatusMap[r.id] = true;
+            } catch (e) {
+                readerOnlineStatusMap[r.id] = false;
+            }
+        } else if (r.ip) {
+            let cleanIp = r.ip.replace(/\/+$/, '');
+            if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
+            try {
+                await fetch(`${cleanIp}/InventoryController/clearCacheTagAndIndex`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                    signal: raceTimeoutSignal(3000)
+                });
+                await fetch(`${cleanIp}/InventoryController/startInventoryRequest`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'Reader-startInventoryRequest',
+                        backgroundInventory: false,
+                        tagFilter: { tagMemoryBank: 'epc', bitOffset: 0, bitLength: 0, hexMask: null }
+                    }),
+                    signal: raceTimeoutSignal(3000)
+                });
+                readerOnlineStatusMap[r.id] = true;
+            } catch (e) {
+                readerOnlineStatusMap[r.id] = false;
+            }
         }
     }
     raceUpdateReaderStatusBadges();
 
     while (racePollActive && raceScanActive && raceIsGunTimeRunning()) {
         const pollPromises = [];
+        let globalPortOffset = 0;
 
-        // Poll Reader 1 (8-Port Host)
-        pollPromises.push(
-            reader('/InventoryController/tagReportingDataAndIndex', {}, 3500)
-                .then(d => {
-                    if (d && Array.isArray(d.data)) {
-                        reader1Online = true;
-                        d.data.forEach(tag => {
-                            const epc = (tag.epcHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
-                            if (epc) raceHandleTagRead(epc, tag.rssi, tag.antennaPort || 1, 1);
-                        });
-                    }
-                })
-                .catch(() => { reader1Online = false; })
-        );
+        for (let r of (multiReaderConfig.readers || [])) {
+            if (!r.enabled) {
+                globalPortOffset += (r.portCount || 4);
+                continue;
+            }
 
-        // Poll Reader 2 if enabled (4-Port Secondary)
-        if (dualReaderConfig.enabled && dualReaderConfig.reader2Ip) {
-            let cleanIp = dualReaderConfig.reader2Ip.replace(/\/+$/, '');
-            if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
+            const currentOffset = globalPortOffset;
+            const currentReaderId = r.id;
 
-            pollPromises.push(
-                fetch(`${cleanIp}/InventoryController/tagReportingDataAndIndex`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
-                    signal: raceTimeoutSignal(2500)
-                })
-                .then(r => r.ok ? r.json() : null)
-                .then(d => {
-                    if (d && Array.isArray(d.data)) {
-                        reader2Online = true;
-                        d.data.forEach(tag => {
-                            const epc = (tag.epcHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
-                            const rawPort = tag.antennaPort || 1;
-                            const mappedPort = rawPort + 8; // Port 9 - 12
-                            if (epc) raceHandleTagRead(epc, tag.rssi, mappedPort, 2);
-                        });
-                    }
-                })
-                .catch(() => { reader2Online = false; })
-            );
+            if (r.isHost || r.ip === 'direct') {
+                pollPromises.push(
+                    reader('/InventoryController/tagReportingDataAndIndex', {}, 3500)
+                        .then(d => {
+                            if (d && Array.isArray(d.data)) {
+                                readerOnlineStatusMap[currentReaderId] = true;
+                                d.data.forEach(tag => {
+                                    const epc = (tag.epcHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+                                    const rawPort = tag.antennaPort || 1;
+                                    const mappedPort = rawPort + currentOffset;
+                                    if (epc) raceHandleTagRead(epc, tag.rssi, mappedPort, currentReaderId, rawPort);
+                                });
+                            }
+                        })
+                        .catch(() => { readerOnlineStatusMap[currentReaderId] = false; })
+                );
+            } else if (r.ip) {
+                let cleanIp = r.ip.replace(/\/+$/, '');
+                if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
+
+                pollPromises.push(
+                    fetch(`${cleanIp}/InventoryController/tagReportingDataAndIndex`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({}),
+                        signal: raceTimeoutSignal(2500)
+                    })
+                    .then(res => res.ok ? res.json() : null)
+                    .then(d => {
+                        if (d && Array.isArray(d.data)) {
+                            readerOnlineStatusMap[currentReaderId] = true;
+                            d.data.forEach(tag => {
+                                const epc = (tag.epcHex || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+                                const rawPort = tag.antennaPort || 1;
+                                const mappedPort = rawPort + currentOffset;
+                                if (epc) raceHandleTagRead(epc, tag.rssi, mappedPort, currentReaderId, rawPort);
+                            });
+                        }
+                    })
+                    .catch(() => { readerOnlineStatusMap[currentReaderId] = false; })
+                );
+            }
+
+            globalPortOffset += (r.portCount || 4);
         }
 
         await Promise.allSettled(pollPromises);
@@ -1318,26 +1618,29 @@ async function raceStartReaderPolling() {
 
 async function raceStopReaderPolling() {
     racePollActive = false;
-    try {
-        await reader('/InventoryController/stopInventoryRequest', { type: 'Reader-stopInventoryRequest' }, 5000);
-    } catch (e) {}
-
-    if (dualReaderConfig.enabled && dualReaderConfig.reader2Ip) {
-        let cleanIp = dualReaderConfig.reader2Ip.replace(/\/+$/, '');
-        if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
-        try {
-            await fetch(`${cleanIp}/InventoryController/stopInventoryRequest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type: 'Reader-stopInventoryRequest' }),
-                signal: raceTimeoutSignal(3000)
-            });
-        } catch (e) {}
+    for (let r of (multiReaderConfig.readers || [])) {
+        if (!r.enabled) continue;
+        if (r.isHost || r.ip === 'direct') {
+            try {
+                await reader('/InventoryController/stopInventoryRequest', { type: 'Reader-stopInventoryRequest' }, 5000);
+            } catch (e) {}
+        } else if (r.ip) {
+            let cleanIp = r.ip.replace(/\/+$/, '');
+            if (!cleanIp.startsWith('http://') && !cleanIp.startsWith('https://')) cleanIp = 'http://' + cleanIp;
+            try {
+                await fetch(`${cleanIp}/InventoryController/stopInventoryRequest`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: 'Reader-stopInventoryRequest' }),
+                    signal: raceTimeoutSignal(3000)
+                });
+            } catch (e) {}
+        }
     }
     raceUpdateReaderStatusBadges();
 }
 
-function raceHandleTagRead(epc, rssi, antenna, readerIndex = 1) {
+function raceHandleTagRead(epc, rssi, antenna, readerIdOrIndex = 'R1', localPort = null) {
     const now = Date.now();
     let runner = runners.find(r => (r.epc || r.id || '').toUpperCase() === epc);
 
@@ -1380,22 +1683,32 @@ function raceHandleTagRead(epc, rssi, antenna, readerIndex = 1) {
         toast(`➕ Tag ${epc.slice(-6)} otomatis didaftarkan sebagai BIB #${newBib}!`, 3000);
     }
 
+    raceProcessRead(epc, rssi, antenna, now, readerIdOrIndex, localPort);
+}
+
+function raceProcessRead(epc, rssi, antenna, readTimestampMs, readerIdOrIndex = 'R1', localPort = null) {
+    const now = readTimestampMs || Date.now();
+    let runner = runners.find(r => (r.epc || r.id || '').toUpperCase() === epc);
+
+    // Multi-Reader Antenna info lookup
+    const antInfo = raceGetAntennaInfo(readerIdOrIndex, localPort || antenna);
     const cat = runner ? (runner.category || '5K').toUpperCase() : '5K';
     const wave = categoryWaves[cat] || { state: raceState, gunStart: gunStartTime };
 
     const portNum = Number(antenna) || 1;
-    let readerPortLabel = '';
-    if (readerIndex === 2 || portNum > 8) {
-        const r2Port = portNum > 8 ? (portNum - 8) : portNum;
-        readerPortLabel = `R2-P${r2Port} (Port ${portNum})`;
-    } else {
-        readerPortLabel = `R1-P${portNum} (Port ${portNum})`;
-    }
-
-    const stationName = (gateMode === 'start' ? 'Start Gate' : (gateMode === 'finish' ? 'Finish Gate' : (gateMode === 'split' ? (portNum <= 4 ? 'Start Gate' : 'Finish Gate') : (runner && runner.status === 'STARTED' ? 'Finish Gate' : 'Start Gate'))));
-    const hubName = (readerIndex === 2 || portNum > 8) ? 'Hub-2 (Secondary Reader)' : 'Hub-1 (Host ESP32)';
-    const antName = `Ant-${portNum > 8 ? portNum - 8 : portNum} (Port ${portNum})`;
+    const readerPortLabel = antInfo.readerPortLabel || `P${portNum}`;
+    const hubName = antInfo.hubName || 'Hub-1 (Host ESP32)';
+    const antName = antInfo.antennaName || `Ant-${portNum}`;
     const eventName = (runner && runner.event) ? runner.event : (raceTitle || 'Event Lomba Lari');
+
+    let stationName = 'Start/Finish Gate';
+    if (antInfo.role === 'START') stationName = 'Start Gate';
+    else if (antInfo.role === 'FINISH') stationName = 'Finish Gate';
+    else if (antInfo.role === 'SPLIT') stationName = 'Checkpoint Split';
+    else if (gateMode === 'start') stationName = 'Start Gate';
+    else if (gateMode === 'finish') stationName = 'Finish Gate';
+    else if (gateMode === 'split') stationName = (portNum <= 4 ? 'Start Gate' : 'Finish Gate');
+    else stationName = (runner && runner.status === 'STARTED') ? 'Finish Gate' : 'Start Gate';
 
     // Anti-duplicate debounce (2.0 seconds per tag)
     const lastSeen = lastReadMap.get(epc) || 0;
@@ -1493,7 +1806,11 @@ function raceHandleTagRead(epc, rssi, antenna, readerIndex = 1) {
     let isStartEvent = false;
     let isFinishEvent = false;
 
-    if (gateMode === 'start') {
+    if (antInfo.role === 'START') {
+        isStartEvent = true;
+    } else if (antInfo.role === 'FINISH') {
+        isFinishEvent = true;
+    } else if (gateMode === 'start') {
         isStartEvent = true;
     } else if (gateMode === 'finish') {
         isFinishEvent = true;
@@ -4910,13 +5227,14 @@ function raceInit() {
     raceLoadRawReads();
     raceLoadCotConfig();
     raceLoadDeadZoneConfig();
-    raceLoadDualReaderConfig();
+    raceLoadMultiReaderConfig();
     raceLoadWaves();
     raceLoadGateMode();
     raceLoadState();
     raceLoadCategories();
     racePopulateCategorySelects();
     raceUpdateControls();
+    raceRenderMultiReaderCards();
     const initRaceTab = sessionStorage.getItem('race_active_tab') || 'control';
     raceSetTab(initRaceTab);
     raceSyncEventTitle();

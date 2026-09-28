@@ -649,16 +649,16 @@
     </div>
 </div>
 
-<!-- ── Panel 7: Setting Gerbang & Dual Reader ────────────────────────── -->
+<!-- ── Panel 7: Setting Gerbang & Multi-Reader ─────────────────────── -->
 <div id="tabPanel_gate" class="race_panel" style="display:none">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
         <div style="display:flex;align-items:center;gap:6px">
             <span style="font-size:18px">📡</span>
-            <b style="font-size:14px;color:#0f172a">Pengaturan Mode Gerbang (Station) & Integrasi Dual Reader RFID</b>
+            <b style="font-size:14px;color:#0f172a">Pengaturan Mode Gerbang & Integrasi Multi-Reader RFID</b>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-            <span id="r1StatusBadge" class="reader_badge online">R1 (8P): 🟢 Host ESP32</span>
-            <span id="r2StatusBadge" class="reader_badge disabled">R2 (4P): ⚪ Nonaktif</span>
+            <span id="r1StatusBadge" class="reader_badge online">R1 (Host): 🟢 Online</span>
+            <span id="r2StatusBadge" class="reader_badge disabled">R2: ⚪ Nonaktif</span>
         </div>
     </div>
 
@@ -698,58 +698,41 @@
 
             <div class="gate_mode_card" id="gateCard_split" onclick="raceSetGateMode('split')" style="border:1px solid #cbd5e1;padding:10px;border-radius:6px;cursor:pointer;background:#ffffff">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                    <b style="font-size:13px;color:#7c3aed">🔀 Pisah Port Antena (Port Split)</b>
+                    <b style="font-size:13px;color:#7c3aed">🔀 Berdasarkan Peran Per-Port Antena</b>
                     <input type="radio" name="gateModeRadio" id="radioGate_split">
                 </div>
                 <div style="font-size:11.5px;color:#64748b;line-height:1.4">
-                    Antena Port 1-4 difungsikan sebagai <b>Start Gate</b>, sedangkan Port 5-8 (atau 5-12) difungsikan sebagai <b>Finish Gate</b>.
+                    Setiap port antena bekerja sesuai pengaturan tabel di bawah (apakah <b>Start</b>, <b>Finish</b>, atau <b>Checkpoint Split</b>).
                 </div>
             </div>
         </div>
     </fieldset>
 
-    <!-- Dual Reader Setup (8-Port + 4-Port = 12 Antena) -->
+    <!-- Multi-Reader & Antena Manager (Menampung 1, 2, 3, atau Lebih Reader) -->
     <fieldset class="style_fieldset" style="margin-bottom:12px">
-        <legend><b style="color:#0369a1">📡 Konfigurasi Dual Reader (1x 8-Port + 1x 4-Port = 12 Antena Total)</b></legend>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
-            <!-- Reader 1: Host ESP32 -->
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:6px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                    <b style="color:#0f172a">Reader 1 (Host ESP32 - 8 Port)</b>
-                    <span class="reader_badge online">Port 1 - 8</span>
-                </div>
-                <div style="font-size:11.5px;color:#475569;margin-bottom:4px">
-                    <b>Koneksi:</b> Direct Internal Reader / Host IP<br>
-                    <b>Status:</b> <span id="r1DetailStatus" style="color:#059669;font-weight:bold">Siap / Terhubung</span>
-                </div>
-            </div>
-
-            <!-- Reader 2: Secondary Reader (4-Port) -->
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:10px;border-radius:6px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                    <label style="display:flex;align-items:center;gap:6px;font-weight:bold;cursor:pointer;color:#0f172a">
-                        <input type="checkbox" id="chkEnableReader2" onchange="raceOnToggleReader2Checkbox(this.checked)">
-                        Reader 2 (Secondary 4-Port)
-                    </label>
-                    <span class="reader_badge" style="background:#e0f2fe;color:#0369a1;border-color:#bae6fd">Port 9 - 12</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-                    <span style="font-size:11.5px;color:#475569">IP Reader 2:</span>
-                    <input type="text" id="reader2IpInput" class="style_input_text mono" style="flex:1;height:26px"
-                           value="http://192.168.1.117" placeholder="http://192.168.1.117">
-                </div>
-                <div style="font-size:11.5px;color:#475569">
-                    <b>Status:</b> <span id="r2DetailStatus" style="color:#64748b;font-weight:bold">Nonaktif</span>
-                </div>
+        <legend><b style="color:#0369a1">📡 Integrasi Multi-Reader & Penamaan Port Antena RFID</b></legend>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <span style="font-size:12px;color:#475569">
+                Gabungkan hingga 3 reader atau lebih dalam 1 sistem lomba lari. Setiap reader & port antena dapat diberi ID, nama, dan peran khusus (Start/Finish/Checkpoint).
+            </span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:28px;font-size:11.5px;padding:0 12px"
+                        onclick="raceAddReader()">
+                    ➕ Tambah Reader Baru
+                </button>
+                <button type="button" class="style_fieldset_div_button btn_tool" style="height:28px;font-size:11.5px;padding:0 10px"
+                        onclick="raceTestAllReadersConnection()">
+                    ⚡ Tes Koneksi Semua Reader
+                </button>
+                <button type="button" class="style_fieldset_div_button font_bold" style="height:28px;font-size:11.5px;padding:0 12px;background:#0284c7;color:#ffffff;border:1px solid #0369a1"
+                        onclick="raceSaveMultiReaderConfig(); toast('✅ Seluruh konfigurasi Multi-Reader & Port Antena berhasil disimpan!', 3500)">
+                    💾 Simpan Konfigurasi
+                </button>
             </div>
         </div>
 
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 14px"
-                    onclick="raceSaveDualReaderFromDrawer()">💾 Simpan Konfigurasi Reader</button>
-            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px"
-                    onclick="raceTestReader2Connection()">⚡ Tes Koneksi / Ping Reader 2</button>
-        </div>
+        <!-- Container Kartu Multi-Reader -->
+        <div id="multiReaderContainer"></div>
     </fieldset>
 </div>
 

@@ -5,60 +5,95 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="js/app.js"></script>
 <script src="js/reader.js"></script>
-<title>Reader Mode</title>
+<script src="js/racetiming.js"></script>
+<title>Multi-Reader & Antena Manager</title>
 </head>
 <body>
 
-<fieldset class="style_fieldset">
-    <legend data-i18n="readerMode"></legend>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="readerRole"></span>:
-        <select id="readerRole" class="style_fieldset_select" style="width:150px">
-            <option value="server">server</option>
-            <option value="client">client</option>
-        </select>
+<!-- ── Hub Multi-Reader & Antena Manager ───────────────────────────── -->
+<fieldset class="style_fieldset" style="margin-bottom:14px">
+    <legend><b style="color:#0369a1;font-size:13.5px">📡 Multi-Reader & Penamaan Port Antena RFID</b></legend>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <span style="font-size:12px;color:#475569;line-height:1.4">
+            Kelola penggabungan <b>Multi-Reader RFID (3 Reader atau lebih)</b> dalam satu sistem terpadu.<br>
+            Atur <b>ID Reader</b>, <b>Nama Reader</b>, <b>Nama/ID per-Port Antena (Matras)</b>, dan <b>Peran Timing (Start / Finish / Checkpoint)</b>.
+        </span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <button type="button" class="style_fieldset_div_button btn_assign font_bold" style="height:30px;font-size:12px;padding:0 12px"
+                    onclick="raceAddReader()">
+                ➕ Tambah Reader Baru
+            </button>
+            <button type="button" class="style_fieldset_div_button btn_tool" style="height:30px;font-size:12px;padding:0 10px"
+                    onclick="raceTestAllReadersConnection()">
+                ⚡ Tes Koneksi Semua Reader
+            </button>
+            <button type="button" class="style_fieldset_div_button font_bold" style="height:30px;font-size:12px;padding:0 14px;background:#0284c7;color:#ffffff;border:1px solid #0369a1"
+                    onclick="raceSaveMultiReaderConfig(); toast('✅ Konfigurasi Multi-Reader & Port Antena berhasil disimpan!', 3500)">
+                💾 Simpan Konfigurasi
+            </button>
+        </div>
     </div>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="protocol"></span>:
-        <select id="protocol" class="style_fieldset_select" style="width:150px">
-            <option value="tcp">tcp</option>
-            <option value="http">http</option>
-        </select>
-    </div>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="hostName"></span>:
-        <input type="text" id="serviceHostName" class="style_input_text" style="width:150px">
-    </div>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="port"></span>:
-        <input type="number" id="servicePort" class="style_input_text" style="width:100px">
-    </div>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="dataType"></span>:
-        <select id="dataType" class="style_fieldset_select" style="width:150px">
-            <option value="json">json</option>
-            <option value="hex">hex</option>
-        </select>
-    </div>
-    <div class="style_fieldset_div_nowrap">
-        <span class="style_fieldset_span" data-i18n="triggerInventoryMode"></span>:
-        <select id="triggerMode" class="style_fieldset_select" style="width:170px">
-            <option value="autoMode">autoMode</option>
-            <option value="gpiTriggerMode">gpiTriggerMode</option>
-            <option value="commandMode">commandMode</option>
-        </select>
-    </div>
-    <div class="style_fieldset_div_wrap button_row">
-        <button class="style_fieldset_div_button" onclick="rmSet()" data-i18n="set"></button>
-        <button class="style_fieldset_div_button" onclick="rmGet()" data-i18n="get"></button>
-    </div>
+
+    <!-- Container Kartu Multi-Reader -->
+    <div id="configMultiReaderContainer"></div>
 </fieldset>
 
+<!-- ── Pengaturan Tingkat Lanjut Mode Jaringan Reader (Client / Server) ── -->
+<details style="margin-top:10px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:6px;padding:8px 12px">
+    <summary style="font-weight:bold;color:#475569;font-size:12px;cursor:pointer">
+        ⚙️ Pengaturan Tingkat Lanjut Protokol Jaringan Reader (TCP/HTTP Client-Server)
+    </summary>
+    <div style="margin-top:10px">
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="readerRole"></span>:
+            <select id="readerRole" class="style_fieldset_select" style="width:150px">
+                <option value="server">server</option>
+                <option value="client">client</option>
+            </select>
+        </div>
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="protocol"></span>:
+            <select id="protocol" class="style_fieldset_select" style="width:150px">
+                <option value="tcp">tcp</option>
+                <option value="http">http</option>
+            </select>
+        </div>
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="hostName"></span>:
+            <input type="text" id="serviceHostName" class="style_input_text" style="width:150px">
+        </div>
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="port"></span>:
+            <input type="number" id="servicePort" class="style_input_text" style="width:100px">
+        </div>
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="dataType"></span>:
+            <select id="dataType" class="style_fieldset_select" style="width:150px">
+                <option value="json">json</option>
+                <option value="hex">hex</option>
+            </select>
+        </div>
+        <div class="style_fieldset_div_nowrap">
+            <span class="style_fieldset_span" data-i18n="triggerInventoryMode"></span>:
+            <select id="triggerMode" class="style_fieldset_select" style="width:170px">
+                <option value="autoMode">autoMode</option>
+                <option value="gpiTriggerMode">gpiTriggerMode</option>
+                <option value="commandMode">commandMode</option>
+            </select>
+        </div>
+        <div class="style_fieldset_div_wrap button_row" style="margin-top:10px">
+            <button class="style_fieldset_div_button" onclick="rmSet()" data-i18n="set"></button>
+            <button class="style_fieldset_div_button" onclick="rmGet()" data-i18n="get"></button>
+        </div>
+    </div>
+</details>
 
 <script>
 window.addEventListener('DOMContentLoaded', () => {
     i18n();
-    rmGet();
+    raceLoadMultiReaderConfig();
+    raceRenderMultiReaderCards('configMultiReaderContainer');
+    if (typeof rmGet === 'function') rmGet();
 });
 </script>
 </body>
